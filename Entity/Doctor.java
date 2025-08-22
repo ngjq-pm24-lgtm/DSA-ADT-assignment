@@ -1,6 +1,7 @@
 package entity;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Doctor implements Serializable, Comparable<Doctor> {
     private static final long serialVersionUID = 1L;
@@ -15,7 +16,6 @@ public class Doctor implements Serializable, Comparable<Doctor> {
         this.phoneNumber = phoneNumber;
         this.isAvailable = false;
     }
-
 
     public int getDoctorID() {
         return doctorID;
@@ -52,7 +52,16 @@ public class Doctor implements Serializable, Comparable<Doctor> {
     }
     
     @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 59 * hash + this.doctorID;
+        return hash;
+    }
+    
+    @Override
     public boolean equals(Object o){
+        if(this == o) return true;
+        
         if(!(o instanceof Doctor))
             return false;
         

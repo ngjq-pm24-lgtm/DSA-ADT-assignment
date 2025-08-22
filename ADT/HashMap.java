@@ -55,8 +55,8 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         if (loadFactor > MAX_LOAD_FACTOR) {
             resizeBackingTable(table.length * 2 + 1);
         }
-
-        int rawHash = hash(key);
+        
+        int rawHash = key.hashCode();
         int baseHash = Math.abs(rawHash) % table.length;
         
         int indexWithRemovedItem = -1;
@@ -102,7 +102,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
             return null;
         }
 
-        int rawHash = hash(key);
+        int rawHash = key.hashCode();
         int baseHash = Math.abs(rawHash) % table.length;
 
         for (int i = 0; i < table.length; i++) {
@@ -126,7 +126,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
     public V remove(K key) {
         if (key == null || size == 0) return null;
         
-        int rawHash = hash(key);
+        int rawHash = key.hashCode();
         int baseHash = Math.abs(rawHash) % table.length;
         
         MapEntry<K, V> current = table[baseHash];
@@ -159,7 +159,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
 
             i++;
 
-            rawHash = hash(key);
+            rawHash = key.hashCode();
             baseHash = Math.abs(rawHash) % table.length;
 
             current = table[baseHash];
@@ -186,9 +186,8 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
     public boolean contains(K key) {
         if (key == null || size == 0) return false;
         
-
         int i = 0;
-        int rawHash = hash(key);
+        int rawHash = key.hashCode();
         int baseHash = Math.abs(rawHash) % table.length;
 
         while (true) {
@@ -242,15 +241,6 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         return entries;
     }
     
-    private int hash(K key) {
-        if(key == null) return -1;
-        
-        if (key instanceof TimeSlot slot) 
-            return Objects.hash(slot.getDay().toLowerCase(), slot.getHour());
-        
-        return key.hashCode();
-    }
-
 
     @Override
     public void clear() {
@@ -276,7 +266,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         for (int i = 0; i < table.length; i++) {
             MapEntry<K, V> entry = table[i];
             if (entry != null && !entry.isRemoved()) {
-                int rawHash = hash(entry.getKey());
+                int rawHash = entry.getKey().hashCode();
                 int newIndex = Math.abs(rawHash) % newTable.length;
 
                 // handle collisions the same way as in add()
