@@ -5,6 +5,7 @@ import java.util.Scanner;
 import entity.Doctor;
 import enums.TimeSlot;
 import control.DoctorMaintenance;
+import entity.TimeSlotKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
@@ -95,7 +96,7 @@ public class DoctorMaintenanceUI {
         return choice;
     }
     
-    public TimeSlot getTimeslotChoice() {
+    public TimeSlotKey getTimeslotChoice() {
         Scanner scanner = new Scanner(System.in);
 
         String chosenDay = getWeekDayChoice();
@@ -123,7 +124,7 @@ public class DoctorMaintenanceUI {
         for (TimeSlot slot : TimeSlot.values()) {
             if (slot.getDay().equalsIgnoreCase(chosenDay)) {
                 if (i == chosenTimeslot) {
-                    return slot;
+                    return TimeSlotKey.convertTimeslotToKey(slot);
                 }
                 i++;
             }
@@ -131,10 +132,10 @@ public class DoctorMaintenanceUI {
         return null;
     }
 
-    public void showDoctorsInTimeslot(ListInterface<Doctor> doctorList, TimeSlot chosenTimeslot){
+    public void showDoctorsInTimeslot(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
         System.out.println("\nDoctors for " + chosenTimeslot + "\n-----------------------------");
         if(doctorList == null || doctorList.isEmpty()){
-            System.out.println("No doctors assigned to this timeslot.");
+            System.out.println("No doctors within this timeslot.");
             return;
         }
         doctorList.sort((a,b) -> a.compareTo(b));
@@ -166,49 +167,40 @@ public class DoctorMaintenanceUI {
         return days[chosenDay - 1];
     }
     
-    public void showDutySchedule(MapInterface<TimeSlot, ListInterface<Doctor>> dutySchedule) {
+    public void showDutySchedule(MapInterface<TimeSlotKey, ListInterface<Doctor>> dutySchedule) {
         String chosenDay = getWeekDayChoice();
 
         System.out.printf("\n\n--- Duty Schedule for %s ---\n", chosenDay);
         
-        MapEntry<TimeSlot, ListInterface<Doctor>>[] arr = dutySchedule.getTable();
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == null) {
-                System.out.println(i + " This one is null");
-            } else {
-                System.out.println(i + " " + arr[i].getKey() + " => " + arr[i].getValue());
-            }
-        }
-
-            int index = 1;
-            for(TimeSlot timeslot : TimeSlot.values()){
-                if(timeslot.getDay().equalsIgnoreCase(chosenDay)){
-                    System.out.print(index++ + ". " + timeslot.toString() + " : ");
-                    ListInterface<Doctor> doctorsOnDuty = dutySchedule.get(timeslot);
-                    if(doctorsOnDuty == null){ //if this timeslot doesnt exist in duty schedule
-                        System.out.println(" (vacant)"); //it means no doctors ever assigned to this timeslot yet
-                    }else if(doctorsOnDuty instanceof LinkedList){ //if a LinkedList is returned, it means there are doctors assigned to this timeslot before, but unclear if they still assigned or already removed
-                        if(doctorsOnDuty.size() > 0){  //so we check whether there are doctors in it
-                            doctorsOnDuty.sort((a,b) -> a.compareTo(b));
-                            Iterator<Doctor> iterator = doctorsOnDuty.getIterator();
-                            int doctorCount = -1;
-                            while(iterator.hasNext()){
-                                if(++doctorCount % 5 == 0 && doctorCount != 0)
-                                    System.out.print("\n                  ");
-                                Doctor doc = iterator.next();
-                                System.out.printf("%s (%d)", doc.getName(), doc.getDoctorID());
-                                if(iterator.hasNext()) System.out.print(", ");   
-                            }
-                            System.out.println();
-                        }else{
-                            System.out.println(" (vacant)");
+        int index = 1;
+        for(TimeSlotKey timeslot : TimeSlotKey.values()){
+            if(timeslot.getTimeslot().getDay().equalsIgnoreCase(chosenDay)){
+                System.out.print(index++ + ". " + timeslot.toString() + " : ");
+                ListInterface<Doctor> doctorsOnDuty = dutySchedule.get(timeslot);
+                if(doctorsOnDuty == null){ //if this timeslot doesnt exist in duty schedule
+                    System.out.println(" (vacant)"); //it means no doctors ever assigned to this timeslot yet
+                }else if(doctorsOnDuty instanceof LinkedList){ //if a LinkedList is returned, it means there are doctors assigned to this timeslot before, but unclear if they still assigned or already removed
+                    if(doctorsOnDuty.size() > 0){  //so we check whether there are doctors in it
+                        doctorsOnDuty.sort((a,b) -> a.compareTo(b));
+                        Iterator<Doctor> iterator = doctorsOnDuty.getIterator();
+                        int doctorCount = -1;
+                        while(iterator.hasNext()){
+                            if(++doctorCount % 5 == 0 && doctorCount != 0)
+                                System.out.print("\n                  ");
+                            Doctor doc = iterator.next();
+                            System.out.printf("%s (%d)", doc.getName(), doc.getDoctorID());
+                            if(iterator.hasNext()) System.out.print(", ");   
                         }
-                        
+                        System.out.println();
+                    }else{
+                        System.out.println(" (vacant)");
                     }
-                    System.out.println();
+
                 }
-                
+                System.out.println();
             }
+
+        }
         System.out.println("-----------------------------\n");
     }
 
@@ -281,8 +273,8 @@ public class DoctorMaintenanceUI {
         System.out.println("\nList of Doctors\n---------------\n" + outputStr);
     }
     
-    public void generateDoctorDutyReport(MapInterface<TimeSlot, ListInterface<Doctor>> dutyScheduleTable, 
-            MapInterface<TimeSlot, ListInterface<Doctor>> availabilityTable, 
+    public void generateDoctorDutyReport(MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable, 
+            MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable, 
             MapInterface<Integer, Doctor> doctorRecords) {
         
         LocalDateTime now = LocalDateTime.now();
@@ -295,7 +287,7 @@ public class DoctorMaintenanceUI {
         System.out.println("                               CLINIC MANAGEMENT SYSTEM - DOCTOR DUTY SCHEDULING REPORT");
         System.out.println("===========================================================================================================================================");
         System.out.printf("Generated at: %s%n", formattedTime);
-        System.out.println("-------------------------------------------------------------------------------\n");
+        System.out.println("---------------------------------------------\n");
 
         System.out.println(" ".repeat(50) + "'#' indicates assigned timeslot");
         System.out.println(" ".repeat(50) + "'@' indicates booked timeslot");
@@ -313,11 +305,13 @@ public class DoctorMaintenanceUI {
                 System.out.printf("\n%6d  | ", allDoctors[i].getValue().getDoctorID());
 
                 int timeslotCount = 0, availableTimeslotCount = 0;
-                MapEntry<TimeSlot, ListInterface<Doctor>>[] allDuties = dutyScheduleTable.getTable();
+                MapEntry<TimeSlotKey, ListInterface<Doctor>>[] allDuties = dutyScheduleTable.getTable();
                 for (int j = 0; j < allDuties.length; j++) {
-                    ListInterface<Doctor> doctorsInTimeslot = allDuties[j].getValue();
-                    if (doctorsInTimeslot.contains(allDoctors[i].getValue())) {
-                        timeslotCount++;
+                    if(allDuties[j] != null){
+                        ListInterface<Doctor> doctorsInTimeslot = allDuties[j].getValue();
+                        if (doctorsInTimeslot.contains(allDoctors[i].getValue())) {
+                            timeslotCount++;
+                        }
                     }
                 }
                 
@@ -341,11 +335,13 @@ public class DoctorMaintenanceUI {
                 }
 
                 
-                MapEntry<TimeSlot, ListInterface<Doctor>>[] allBookedDuties = availabilityTable.getTable();
+                MapEntry<TimeSlotKey, ListInterface<Doctor>>[] allBookedDuties = availabilityTable.getTable();
                 for (int j = 0; j < allBookedDuties.length; j++) {
-                    ListInterface<Doctor> doctorsInTimeslot = allBookedDuties[j].getValue();
-                    if (doctorsInTimeslot.contains(allDoctors[i].getValue())) {
-                        availableTimeslotCount++;
+                    if(allBookedDuties[j] != null){
+                        ListInterface<Doctor> doctorsInTimeslot = allBookedDuties[j].getValue();
+                        if (doctorsInTimeslot.contains(allDoctors[i].getValue())) {
+                            availableTimeslotCount++;
+                        }
                     }
                 }
 
@@ -373,7 +369,7 @@ public class DoctorMaintenanceUI {
             System.out.printf("%s (%d)", mostSlotDoctor[i].getName(), mostSlotDoctor[i].getDoctorID());
             if(i < mostSlotDocCount) System.out.print(", ");
             i++;
-            if(i % 5 == 0) System.out.print("\n                                                 ");
+            if(i % 3 == 0) System.out.print("\n                                                 ");
         }
  
         System.out.printf("\nDoctors with least assigned timeslot (%2d slots): ", leastSlots);
@@ -381,7 +377,7 @@ public class DoctorMaintenanceUI {
             System.out.printf("%s (%d)", leastSlotDoctor[i].getName(), leastSlotDoctor[i].getDoctorID());
             if(i < leastSlotDocCount) System.out.print(", ");
             i++;
-            if(i % 5 == 0) System.out.print("\n                                                 ");
+            if(i % 3 == 0) System.out.print("\n                                                 ");
         }
         
         
@@ -395,7 +391,7 @@ public class DoctorMaintenanceUI {
         System.out.println("-".repeat(100));
         MapEntry<Integer,Integer>[] arr = doctorsDutyCount.sort((a, b) -> a.compareTo(b));
         for(MapEntry<Integer,Integer> entry : arr){
-            System.out.printf("%10d  |   %25d  |   %30.2f\n", entry.getKey(), entry.getValue(), (double) entry.getValue() / totalTimeslotCount * 100);
+            System.out.printf("%10d  |   %25d  |   %30.2f\n", entry.getKey(), entry.getValue(), (totalTimeslotCount == 0? 0 : (double) entry.getValue() / totalTimeslotCount * 100));
         }
         System.out.println("-".repeat(100));
         
@@ -405,7 +401,7 @@ public class DoctorMaintenanceUI {
     }
 
     
-    public void generateDoctorAvailabilityReport(MapInterface<TimeSlot, ListInterface<Doctor>> availabilityTable) {
+    public void generateDoctorAvailabilityReport(MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable) {
         
         LocalDateTime now = LocalDateTime.now();
 
@@ -417,7 +413,7 @@ public class DoctorMaintenanceUI {
         System.out.println("                                       CLINIC MANAGEMENT SYSTEM - DOCTOR AVAILABILITY REPORT");
         System.out.println("===========================================================================================================================================");
         System.out.printf("Generated at: %s%n", formattedTime);
-        System.out.println("-------------------------------------------------------------------------------\n");
+        System.out.println("---------------------------------------------\n");
 
         int[] totalAvailableDoctorsByDay = new int[7];
         int totalAvailabilities = 0, maxAvailable = 0, minAvailable = 0;
@@ -427,7 +423,7 @@ public class DoctorMaintenanceUI {
         System.out.printf("%-15s | %-25s | %-60s%n", "Timeslot", "Available Doctors Count", "Available Doctors");
         System.out.println("----------------------------------------------------------------------------------------------");
 
-        for (TimeSlot slot : TimeSlot.values()) {
+        for (TimeSlotKey slot : TimeSlotKey.values()) {
             ListInterface<Doctor> doctors = availabilityTable.get(slot);
             int count = (doctors != null) ? doctors.size() : 0;
             totalAvailabilities += count;
@@ -435,16 +431,16 @@ public class DoctorMaintenanceUI {
             if (count > maxAvailable) {
                 maxAvailable = count;
                 maxSlots.clear();
-                maxSlots.add(slot);
+                maxSlots.add(slot.getTimeslot());
             } else if (count == maxAvailable) {
-                maxSlots.add(slot);
+                maxSlots.add(slot.getTimeslot());
             }
             if (count < minAvailable) {
                 minAvailable = count;
                 minSlots.clear();
-                minSlots.add(slot);
+                minSlots.add(slot.getTimeslot());
             } else if (count == minAvailable) {
-                minSlots.add(slot);
+                minSlots.add(slot.getTimeslot());
             }
 
             StringBuilder sb = new StringBuilder();
@@ -453,13 +449,13 @@ public class DoctorMaintenanceUI {
                 for (int i = 1; i <= doctors.size(); i++) {
                     sb.append(doctors.get(i).getDoctorID());
                     if(i < doctors.size()) sb.append(", ");
-                    if(i%8 == 0) sb.append("\n                                            | ");
+                    if(i%8 == 0 && i < doctors.size()) sb.append("\n                                            | ");
                 }
             } else {
                 sb.append("-");
             }
 
-            System.out.printf("%-15s | %-25d | %-60s%n", slot.toString(), count, sb.toString());
+            System.out.printf("%-15s | %-25d | %-60s\n", slot.toString(), count, sb.toString());
             
     }
         
@@ -477,7 +473,7 @@ public class DoctorMaintenanceUI {
         System.out.println("Total\nAvailable\nDoctors");
 
         for (int level = largest; level >= 1; level--) {
-            System.out.printf("%d | ", level);
+            System.out.printf("%2d | ", level);
             for (int i=0; i<7; i++) {
                 if (totalAvailableDoctorsByDay[i] >= level) {
                     System.out.print("   *   ");
@@ -490,7 +486,7 @@ public class DoctorMaintenanceUI {
 
         System.out.println("-----------------------------------------------------> Weekdays");
 
-        System.out.print("   ");
+        System.out.print("    ");
         for (String weekday : weekdays) {
             System.out.print("   " + weekday.substring(0, 3) + " ");
         }

@@ -4,13 +4,11 @@ import adt.*;
 import entity.*;
 import dao.GenericDAO;
 import boundary.DoctorMaintenanceUI;
-import enums.TimeSlot;
 import java.util.Iterator;
-import utility.MessageUI;
 
 public class DoctorMaintenance {
-    private MapInterface<TimeSlot, ListInterface<Doctor>> dutyScheduleTable;
-    private MapInterface<TimeSlot, ListInterface<Doctor>> availabilityTable;
+    private MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
+    private MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable;
     private MapInterface<Integer, Doctor> doctorRecords;
     private GenericDAO DAO = new GenericDAO();
     private DoctorMaintenanceUI doctorUI = new DoctorMaintenanceUI();
@@ -73,7 +71,7 @@ public class DoctorMaintenance {
                             doctor.setPhoneNumber(newPhone);
                     }
                 }else{
-                    MessageUI.displayNotFoundMessage("doctor");
+                    System.out.println("This doctor does not exist.");
                 }
                 break;
             case 3:
@@ -93,7 +91,7 @@ public class DoctorMaintenance {
                 break;
             case 4:
                 int choice3 = doctorUI.getDutyScheduleMenuChoice();
-                TimeSlot chosenTimeslot;
+                TimeSlotKey chosenTimeslot;
                 int[] doctorIDs, approved, rejected;
                 int approveCount, rejectCount;
                 switch(choice3){
@@ -230,7 +228,7 @@ public class DoctorMaintenance {
                         else{
                             System.out.printf("\nDoctor %d Available Timeslots\n-------------------------------\n", doctorID);
                             boolean noAvailableSlot = true;
-                            for (TimeSlot slot : TimeSlot.values()) {
+                            for (TimeSlotKey slot : TimeSlotKey.values()) {
                                 ListInterface<Doctor> doctorList = availabilityTable.get(slot);
                                 if (doctorList != null) {
                                     if (doctorList.contains(chosenDoctor)) {
@@ -262,16 +260,8 @@ public class DoctorMaintenance {
         } while (choice != 0);
     }
     
-    public boolean assignDoctorToSlotDuty(TimeSlot slot, Doctor doctor) {
+    public boolean assignDoctorToSlotDuty(TimeSlotKey slot, Doctor doctor) {
         
-        MapEntry<TimeSlot, ListInterface<Doctor>>[] arr = dutyScheduleTable.getTable();
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == null) {
-                System.out.println(i + " This one is null");
-            } else {
-                System.out.println(i + " " + arr[i].getKey() + " => " + arr[i].getValue());
-            }
-        }
         ListInterface<Doctor> dutyList = dutyScheduleTable.get(slot);
 
         // Create list if this slot is not initialized yet
@@ -304,7 +294,7 @@ public class DoctorMaintenance {
         }
     }
     
-    public boolean removeDoctorFromSlotDuty(TimeSlot chosenTimeslot, Doctor doctorToRemove){
+    public boolean removeDoctorFromSlotDuty(TimeSlotKey chosenTimeslot, Doctor doctorToRemove){
         ListInterface<Doctor> doctorsOnDuty = dutyScheduleTable.get(chosenTimeslot);
         ListInterface<Doctor> availableDoctors = availabilityTable.get(chosenTimeslot);
         if(!availableDoctors.contains(doctorToRemove)) //doctor present in duty table for x timeslot 
@@ -353,8 +343,8 @@ public class DoctorMaintenance {
         int[] availableDoctorsID = new int[30];
         int uniqueCount = 0;
 
-        for (TimeSlot slot : TimeSlot.values()) {
-            if (slot.getDay().equalsIgnoreCase(weekday)) {
+        for (TimeSlotKey slot : TimeSlotKey.values()) {
+            if (slot.getTimeslot().getDay().equalsIgnoreCase(weekday)) {
                 ListInterface<Doctor> doctors = availabilityTable.get(slot);
                 if (doctors != null) {
                     Iterator<Doctor> iterator = doctors.getIterator();
@@ -384,7 +374,7 @@ public class DoctorMaintenance {
     public boolean isDoctorAssignedToDuty(int doctorID){
         boolean assignedToDuty = false;
 
-        for (TimeSlot slot : TimeSlot.values()) {
+        for (TimeSlotKey slot : TimeSlotKey.values()) {
             ListInterface<Doctor> doctors = dutyScheduleTable.get(slot);
             if (doctors != null) {
                 for (int i = 1; i <= doctors.size(); i++) {
@@ -402,19 +392,16 @@ public class DoctorMaintenance {
     }
 
 
-    public void resetAvailability() {
-        //availabilityTable = dutyScheduleTable.deepCopy();
-    }
 
-    public ListInterface<Doctor> getDoctorsOnDuty(TimeSlot slot) {
+    public ListInterface<Doctor> getDoctorsOnDuty(TimeSlotKey slot) {
         return dutyScheduleTable.get(slot);
     }
 
-    public ListInterface<Doctor> getAvailableDoctors(TimeSlot slot) {
+    public ListInterface<Doctor> getAvailableDoctors(TimeSlotKey slot) {
         return availabilityTable.get(slot);
     }
 
-    public MapInterface<TimeSlot, ListInterface<Doctor>> getAvailabilityTable() {
+    public MapInterface<TimeSlotKey, ListInterface<Doctor>> getAvailabilityTable() {
         return availabilityTable;
     }
     
