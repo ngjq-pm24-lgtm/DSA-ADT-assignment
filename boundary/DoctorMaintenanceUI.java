@@ -1,11 +1,11 @@
 package boundary;
 
-import adt.*;
+import ADT.*;
 import java.util.Scanner;
-import entity.Doctor;
+import Entity.Doctor;
 import enums.TimeSlot;
 import control.DoctorMaintenance;
-import entity.TimeSlotKey;
+import Entity.TimeSlotKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;

@@ -1,7 +1,7 @@
 package dao;
 
-import adt.*;
-import entity.Doctor;
+import ADT.*;
+import Entity.Doctor;
 import java.io.*;
 
 

@@ -151,8 +151,10 @@ public class ConsultationManager {
         // Handle status transitions
         switch (newStatus) {
             case CANCELLED:
-                // Remove from queue if it's there
-                removeFromQueue(consultationId);
+                // Remove from queue if it's there and add to past consultations
+                if (removeFromQueue(consultationId)) {
+                    pastConsultations.add(consultation);
+                }
                 break;
                 
             case COMPLETED:

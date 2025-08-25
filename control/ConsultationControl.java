@@ -2,10 +2,12 @@ package control;
 
 import ADT.ListInterface;
 import ADT.MapInterface;
+import ADT.MyQueue;
 import ADT.QueueInterface;
 import Entity.Consultation;
 import Entity.Patient;
 import Entity.Doctor;
+import java.util.UUID;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -42,7 +44,14 @@ public class ConsultationControl {
             return null;
         }
 
-        return new Consultation(patient, doctor, date, time, reason,
+        // Check for scheduling conflicts
+        if (isDoctorScheduled(doctor, date, time)) {
+            System.out.println("Error: Dr. " + doctor.getName() + " is already scheduled for a consultation at this time.");
+            return null;
+        }
+
+        String newId = UUID.randomUUID().toString();
+        return new Consultation(newId, patient, doctor, date, time, reason,
                 "", "", ""); // diagnosis, prescription, notes default empty
     }
 
@@ -68,6 +77,7 @@ public class ConsultationControl {
             "ID", "Status", "Patient", "Doctor", "Date", "Time", "Reason"));
         System.out.println("-".repeat(90));
         
+        int scheduledCount = 0, completedCount = 0, cancelledCount = 0;
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
             System.out.println(String.format("%-8s %-10s %-15s %-15s %-12s %-8s %-20s",
@@ -80,19 +90,32 @@ public class ConsultationControl {
                 c.getReason().substring(0, Math.min(17, c.getReason().length())) + 
                     (c.getReason().length() > 17 ? "..." : "")
             ));
+
+            // Tally counts in the same loop
+            switch (c.getStatus()) {
+                case SCHEDULED:
+                    scheduledCount++;
+                    break;
+                case COMPLETED:
+                    completedCount++;
+                    break;
+                case CANCELLED:
+                    cancelledCount++;
+                    break;
+                default:
+                    break;
+            }
         }
         
         // Display counts
-        System.out.println("\nSummary: " + getScheduledConsultations().size() + " scheduled, " +
-                          getCompletedConsultations().size() + " completed, " +
-                          getCancelledConsultations().size() + " cancelled");
+        System.out.println("\nSummary: " + scheduledCount + " scheduled, " +
+                          completedCount + " completed, " +
+                          cancelledCount + " cancelled");
     }
 
     public Consultation attendNextConsultation() {
         Consultation next = consultationQueue.dequeue();
         if (next != null) {
-            next.setStatus(Consultation.Status.IN_PROGRESS);
-            // Move to completed list after processing
             next.setStatus(Consultation.Status.COMPLETED);
         }
         return next;
@@ -122,13 +145,21 @@ public class ConsultationControl {
      */
     public boolean cancelConsultation(String consultationId) {
         Consultation consultation = consultationMap.get(consultationId);
-        if (consultation != null && consultation.isScheduled()) {
-            consultation.setStatus(Consultation.Status.CANCELLED);
-            // Remove from queue if present
-            removeFromQueue(consultation);
-            return true;
+        if (consultation == null) {
+            System.out.println("Error: Consultation with ID " + consultationId.substring(0, 6) + "... not found.");
+            return false;
         }
-        return false;
+
+        if (!consultation.isScheduled()) {
+            System.out.println("Error: Consultation cannot be cancelled. Current status: " + consultation.getStatus());
+            return false;
+        }
+
+        consultation.setStatus(Consultation.Status.CANCELLED);
+        // Remove from queue if present
+        removeFromQueue(consultation);
+        System.out.println("Consultation " + consultationId.substring(0, 6) + "... has been cancelled.");
+        return true;
     }
     
     private void removeFromQueue(Consultation consultation) {
@@ -225,7 +256,7 @@ public class ConsultationControl {
         int count = 0;
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
-            if (c.getDoctor().getDoctorId().equals(doctorId)) {
+            if (String.valueOf(c.getDoctor().getDoctorID()).equals(doctorId)) {
                 System.out.println(String.format("%-8s %-15s %-12s %-8s %-20s",
                     c.getConsultationID().substring(0, 6) + "...",
                     c.getPatient().getName().substring(0, Math.min(12, c.getPatient().getName().length())),
@@ -299,7 +330,7 @@ public class ConsultationControl {
     private Patient findPatientById(String patientId) {
         for (int i = 0; i < patientList.size(); i++) {
             Patient p = patientList.get(i);
-            if (p.getPatientId().equals(patientId)) {
+            if (p.getPatientID().equals(patientId)) {
                 return p;
             }
         }
@@ -309,10 +340,23 @@ public class ConsultationControl {
     private Doctor findDoctorById(String doctorId) {
         for (int i = 0; i < doctorList.size(); i++) {
             Doctor d = doctorList.get(i);
-            if (d.getDoctorId().equals(doctorId)) {
+            if (String.valueOf(d.getDoctorID()).equals(doctorId)) {
                 return d;
             }
         }
         return null;
+    }
+
+    private boolean isDoctorScheduled(Doctor doctor, String date, String time) {
+        for (int i = 0; i < consultationList.size(); i++) {
+            Consultation c = consultationList.get(i);
+            if (c.getDoctor().equals(doctor) && 
+                c.getDate().equals(date) && 
+                c.getTime().equals(time) && 
+                c.isScheduled()) {
+                return true; // Found a conflicting scheduled consultation
+            }
+        }
+        return false;
     }
 }

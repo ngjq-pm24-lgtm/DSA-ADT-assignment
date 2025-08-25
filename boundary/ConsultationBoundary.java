@@ -190,9 +190,20 @@ public class ConsultationBoundary {
 
         int index = choice - 1;
         if (control.isValidConsultationIndex(index)) {
-            Consultation cancelled = control.cancelConsultationByIndex(index);
-            System.out.println("\nSuccessfully cancelled consultation for " +
-                cancelled.getPatient().getName() + " on " + cancelled.getDate() + " at " + cancelled.getTime());
+            // Get the consultation object by index first
+            Consultation consultationToCancel = control.getConsultationByIndex(index);
+            if (consultationToCancel != null) {
+                // Use the ID to cancel via the control method
+                boolean success = control.cancelConsultation(consultationToCancel.getConsultationID());
+                if (success) {
+                    System.out.println("\nSuccessfully cancelled consultation for " +
+                        consultationToCancel.getPatient().getName() + " on " + consultationToCancel.getDate() + " at " + consultationToCancel.getTime());
+                } else {
+                    System.out.println("Failed to cancel consultation. It may have already been completed or cancelled.");
+                }
+            } else {
+                 System.out.println("Error: Could not retrieve consultation details.");
+            }
         } else {
             System.out.println("Invalid selection. No consultation was cancelled.");
         }

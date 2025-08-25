@@ -1,4 +1,4 @@
-package entity;
+package Entity;
 
 import enums.TimeSlot;
 import java.io.Serializable;

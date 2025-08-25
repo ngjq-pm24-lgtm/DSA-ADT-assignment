@@ -1,7 +1,7 @@
 package control;
 
-import adt.*;
-import entity.*;
+import ADT.*;
+import Entity.*;
 import dao.GenericDAO;
 import boundary.DoctorMaintenanceUI;
 import java.util.Iterator;

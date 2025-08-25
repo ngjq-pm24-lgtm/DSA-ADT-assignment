@@ -1,5 +1,7 @@
 package ADT;
 
+import java.util.Comparator;
+
 public class MyList<T> implements ListInterface<T> {
     private static final int INITIAL_CAPACITY = 20;
     private T[] list;
@@ -60,5 +62,26 @@ public class MyList<T> implements ListInterface<T> {
             System.arraycopy(list, 0, newList, 0, size);
             list = newList;
         }
+    }
+
+    @Override
+    public void sort(Comparator<T> comparator) {
+        if (size <= 1 || comparator == null) {
+            return;
+        }
+
+        boolean swapped;
+        do {
+            swapped = false;
+            for (int i = 0; i < size - 1; i++) {
+                if (comparator.compare(list[i], list[i + 1]) > 0) {
+                    // Swap elements
+                    T temp = list[i];
+                    list[i] = list[i + 1];
+                    list[i + 1] = temp;
+                    swapped = true;
+                }
+            }
+        } while (swapped);
     }
 }

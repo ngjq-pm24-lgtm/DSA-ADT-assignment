@@ -1,5 +1,5 @@
 
-package Entity
+package Entity;
 
 public class Treatment {
 	private String treatmentID;
