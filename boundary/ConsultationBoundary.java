@@ -6,8 +6,8 @@ import Entity.Consultation;
 import java.util.Scanner;
 
 public class ConsultationBoundary {
-    private ConsultationControl control;
-    private Scanner scanner;
+    private final ConsultationControl control;
+    private final Scanner scanner;
 
     public ConsultationBoundary(ConsultationControl control) {
         this.control = control;
@@ -38,12 +38,10 @@ public class ConsultationBoundary {
                     addFollowUpConsultation();
                     break;
                 case 4:
-                    // cancelConsultation(); // to be implemented
-                    System.out.println("[Feature not implemented yet]");
+                    cancelConsultation();
                     break;
                 case 5:
-                    // generateConsultationReport(); // to be implemented
-                    System.out.println("[Feature not implemented yet]");
+                    generateConsultationReport();
                     break;
                 case 6:
                     System.out.println("Returning to Main Menu...");
@@ -123,12 +121,80 @@ public class ConsultationBoundary {
     }
 
     private int getIntInput() {
-        while (true) {
-            try {
-                return Integer.parseInt(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.print("Invalid input. Please enter a number: ");
-            }
+        while (!scanner.hasNextInt()) {
+            System.out.println("Please enter a valid number.");
+            scanner.next(); // consume invalid input
+        }
+        int input = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        return input;
+    }
+
+    private void generateConsultationReport() {
+        System.out.println("\n=== Generate Consultation Report ===");
+        if (control.getConsultationCount() == 0) {
+            System.out.println("No consultation records found to generate report.");
+            return;
+        }
+        
+        System.out.println("\n1. All Consultations Report");
+        System.out.println("2. Consultations by Date Range");
+        System.out.println("3. Consultations by Doctor");
+        System.out.print("\nSelect report type (0 to cancel): ");
+        
+        int choice = getIntInput();
+        if (choice == 0) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+        
+        switch (choice) {
+            case 1:
+                control.generateAllConsultationsReport();
+                break;
+            case 2:
+                System.out.print("\nEnter start date (YYYY-MM-DD): ");
+                String startDate = scanner.nextLine();
+                System.out.print("Enter end date (YYYY-MM-DD): ");
+                String endDate = scanner.nextLine();
+                control.generateConsultationsByDateRangeReport(startDate, endDate);
+                break;
+            case 3:
+                System.out.print("\nEnter Doctor ID: ");
+                String doctorId = scanner.nextLine();
+                control.generateConsultationsByDoctorReport(doctorId);
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+    }
+    
+    private void cancelConsultation() {
+        System.out.println("\n=== Cancel Consultation Appointment ===");
+        if (control.getConsultationCount() == 0) {
+            System.out.println("No consultations found to cancel.");
+            return;
+        }
+
+        // Display all consultations with numbers
+        System.out.println("\nCurrent Consultations:");
+        viewAllConsultationRecords();
+
+        System.out.print("\nEnter the number of the consultation to cancel (0 to cancel): ");
+        int choice = getIntInput();
+
+        if (choice == 0) {
+            System.out.println("Operation cancelled.");
+            return;
+        }
+
+        int index = choice - 1;
+        if (control.isValidConsultationIndex(index)) {
+            Consultation cancelled = control.cancelConsultationByIndex(index);
+            System.out.println("\nSuccessfully cancelled consultation for " +
+                cancelled.getPatient().getName() + " on " + cancelled.getDate() + " at " + cancelled.getTime());
+        } else {
+            System.out.println("Invalid selection. No consultation was cancelled.");
         }
     }
 }
