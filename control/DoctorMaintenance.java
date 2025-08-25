@@ -319,9 +319,6 @@ public class DoctorMaintenance {
         DAO.saveToFile(doctorRecords, doctorFile);
     }
     
-    public void deleteDoctor(){
-        
-    }
 
     public void displayAllDoctors() {
         doctorUI.listAllDoctors(getAllDoctors());

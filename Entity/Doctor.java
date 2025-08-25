@@ -1,7 +1,6 @@
 package entity;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 public class Doctor implements Serializable, Comparable<Doctor> {
     private static final long serialVersionUID = 1L;
