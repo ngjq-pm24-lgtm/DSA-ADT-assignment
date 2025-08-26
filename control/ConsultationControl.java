@@ -3,67 +3,128 @@ package control;
 import ADT.ListInterface;
 import ADT.MapInterface;
 import ADT.MyQueue;
+import ADT.MyList;
 import ADT.QueueInterface;
+import ADT.MyMap;
 import Entity.Consultation;
 import Entity.Patient;
 import Entity.Doctor;
-import java.util.UUID;
-
-import java.util.Comparator;
+import dao.ConsultationDAO;
+import exception.DataAccessException;
+import exception.EntityNotFoundException;
+import exception.ValidationException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ConsultationControl {
-    private final QueueInterface<Consultation> consultationQueue;
-    private final ListInterface<Consultation> consultationList;
-    private final MapInterface<String, Consultation> consultationMap;
-
-    // Simulated patient and doctor lookup systems (you'll replace these with actual module calls)
+    private static final Logger LOGGER = Logger.getLogger(ConsultationControl.class.getName());
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    private QueueInterface<Consultation> consultationQueue;
+    private ListInterface<Consultation> consultationList;
+    private MapInterface<String, Consultation> consultationMap;
     private final ListInterface<Patient> patientList;
     private final ListInterface<Doctor> doctorList;
+    private final ConsultationDAO<String, Consultation> consultationDAO;
+    
+    // File path for data persistence
+    private static final String CONSULTATION_FILE = "data/consultations.dat";
 
     public ConsultationControl(QueueInterface<Consultation> queue, 
                              ListInterface<Consultation> list,
                              MapInterface<String, Consultation> map,
                              ListInterface<Patient> patientList, 
-                             ListInterface<Doctor> doctorList) {
-        this.consultationQueue = queue;
-        this.consultationList = list;
-        this.consultationMap = map;
+                             ListInterface<Doctor> doctorList) 
+            throws DataAccessException {
+        this.consultationQueue = queue != null ? queue : new MyQueue<>();
+        this.consultationList = list != null ? list : new MyList<>();
+        this.consultationMap = map != null ? map : new MyMap<>();
         this.patientList = patientList;
         this.doctorList = doctorList;
+        this.consultationDAO = new ConsultationDAO<>();
+        
+        // Load data on initialization
+        loadConsultations();
     }
 
     // Create consultation using full Patient and Doctor objects from the shared ADT
     public Consultation createConsultation(String patientId, String doctorId,
-                                           String date, String time, String reason) {
-        Patient patient = findPatientById(patientId);
-        Doctor doctor = findDoctorById(doctorId);
+                                         String date, String time, String reason) 
+            throws ValidationException, EntityNotFoundException, DataAccessException {
+        try {
+            // Input validation
+            validateInput(patientId, "Patient ID");
+            validateInput(doctorId, "Doctor ID");
+            validateInput(date, "Date");
+            validateInput(time, "Time");
+            validateInput(reason, "Reason");
+            
+            // Validate date and time formats and check if date is in the future
+            if (validateAndParseDate(date).isBefore(LocalDate.now())) {
+                throw new ValidationException("Date", "Cannot schedule consultation in the past");
+            }
+            
+            // Find entities
+            Patient patient = findPatientById(patientId);
+            if (patient == null) {
+                throw new EntityNotFoundException("Patient", patientId);
+            }
+            
+            Doctor doctor = findDoctorById(doctorId);
+            if (doctor == null) {
+                throw new EntityNotFoundException("Doctor", doctorId);
+            }
 
-        if (patient == null || doctor == null) {
-            System.out.println("Error: Patient or Doctor not found.");
-            return null;
+            // Check for scheduling conflicts
+            if (isDoctorScheduled(doctor, date, time)) {
+                throw new ValidationException("Schedule", 
+                    String.format("Dr. %s is already scheduled for a consultation at %s %s", 
+                        doctor.getName(), date, time));
+            }
+
+            String newId = consultationDAO.generateConsultationId();
+            Consultation consultation = new Consultation(newId, patient, doctor, date, time, reason,
+                    "", "", ""); // diagnosis, prescription, notes default empty
+            
+            addConsultation(consultation);
+            LOGGER.info(String.format("Created new consultation with ID: %s", newId));
+            return consultation;
+            
+        } catch (DateTimeParseException e) {
+            throw new ValidationException("Date/Time", "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time.", e);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error creating consultation", e);
+            throw new DataAccessException("Failed to create consultation", e);
         }
-
-        // Check for scheduling conflicts
-        if (isDoctorScheduled(doctor, date, time)) {
-            System.out.println("Error: Dr. " + doctor.getName() + " is already scheduled for a consultation at this time.");
-            return null;
-        }
-
-        String newId = UUID.randomUUID().toString();
-        return new Consultation(newId, patient, doctor, date, time, reason,
-                "", "", ""); // diagnosis, prescription, notes default empty
     }
 
     // Add consultation to queue, list, and map
-    public boolean addConsultation(Consultation consultation) {
-        if (consultation == null || consultationMap.containsKey(consultation.getConsultationID())) {
-            return false;
+    public void addConsultation(Consultation consultation) 
+            throws ValidationException, DataAccessException {
+        if (consultation == null) {
+            throw new ValidationException("Consultation", "Consultation cannot be null");
         }
-        consultationQueue.enqueue(consultation);
-        consultationList.add(consultation);
-        consultationMap.put(consultation.getConsultationID(), consultation);
-        return true;
+        if (consultationMap.containsKey(consultation.getConsultationID())) {
+            throw new ValidationException("Consultation ID", 
+                String.format("Consultation with ID %s already exists", 
+                    consultation.getConsultationID()));
+        }
+        
+        try {
+            consultationQueue.enqueue(consultation);
+            consultationList.add(consultation);
+            consultationMap.put(consultation.getConsultationID(), consultation);
+            saveConsultations();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error adding consultation", e);
+            throw new DataAccessException("Failed to add consultation", e);
+        }
     }
 
     public void displayAllConsultationRecords() {
@@ -113,29 +174,53 @@ public class ConsultationControl {
                           cancelledCount + " cancelled");
     }
 
-    public Consultation attendNextConsultation() {
-        Consultation next = consultationQueue.dequeue();
-        if (next != null) {
-            next.setStatus(Consultation.Status.COMPLETED);
+    public Consultation attendNextConsultation() throws DataAccessException {
+        if (consultationQueue.isEmpty()) {
+            return null;
         }
-        return next;
+        
+        try {
+            Consultation next = consultationQueue.dequeue();
+            if (next != null) {
+                next.setStatus(Consultation.Status.COMPLETED);
+                saveConsultations();
+            }
+            return next;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error attending next consultation", e);
+            throw new DataAccessException("Failed to attend next consultation", e);
+        }
     }
 
-    public Consultation peekNextConsultation() {
-        return consultationQueue.peek();
+    public Consultation peekNextConsultation() throws DataAccessException {
+        try {
+            return consultationQueue.peek();
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to peek next consultation", e);
+        }
     }
 
-    public Consultation getConsultationByIndex(int index) {
-        if (index < 0 || index >= consultationList.size()) return null;
-        return consultationList.get(index);
+    public Consultation getConsultationById(String consultationId) throws DataAccessException, ValidationException {
+        if (consultationId == null || consultationId.trim().isEmpty()) {
+            throw new ValidationException("Consultation ID", "cannot be null or empty");
+        }
+        try {
+            return consultationMap.get(consultationId);
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to get consultation by ID", e);
+        }
     }
 
     public boolean isValidConsultationIndex(int index) {
         return index >= 0 && index < consultationList.size();
     }
 
-    public int getConsultationCount() {
-        return consultationList.size();
+    public int getTotalConsultations() throws DataAccessException {
+        try {
+            return consultationList.size();
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to get total consultations", e);
+        }
     }
     
     /**
@@ -143,43 +228,101 @@ public class ConsultationControl {
      * @param index The index of the consultation to cancel
      * @return The cancelled Consultation object, or null if index is invalid
      */
-    public boolean cancelConsultation(String consultationId) {
+    public void cancelConsultation(String consultationId) 
+            throws EntityNotFoundException, ValidationException, DataAccessException {
+        validateInput(consultationId, "Consultation ID");
+        
         Consultation consultation = consultationMap.get(consultationId);
         if (consultation == null) {
-            System.out.println("Error: Consultation with ID " + consultationId.substring(0, 6) + "... not found.");
-            return false;
+            throw new EntityNotFoundException("Consultation", consultationId);
         }
 
         if (!consultation.isScheduled()) {
-            System.out.println("Error: Consultation cannot be cancelled. Current status: " + consultation.getStatus());
-            return false;
+            throw new ValidationException("Consultation status", 
+                String.format("Cannot cancel consultation with status: %s", consultation.getStatus()));
         }
 
-        consultation.setStatus(Consultation.Status.CANCELLED);
-        // Remove from queue if present
-        removeFromQueue(consultation);
-        System.out.println("Consultation " + consultationId.substring(0, 6) + "... has been cancelled.");
-        return true;
+        try {
+            consultation.setStatus(Consultation.Status.CANCELLED);
+            removeFromQueue(consultation);
+            saveConsultations();
+            LOGGER.info(String.format("Cancelled consultation with ID: %s", consultationId));
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error cancelling consultation", e);
+            throw new DataAccessException("Failed to cancel consultation", e);
+        }
     }
     
     private void removeFromQueue(Consultation consultation) {
+        if (consultation == null) {
+            return;
+        }
+        
         // Create a temporary queue to hold consultations
         QueueInterface<Consultation> tempQueue = new MyQueue<>();
-        boolean found = false;
         
-        // Move all consultations to temp queue except the one to remove
+        // Dequeue consultations until we find the one to remove
         while (!consultationQueue.isEmpty()) {
             Consultation c = consultationQueue.dequeue();
-            if (!c.getConsultationID().equals(consultation.getConsultationID())) {
+            if (!c.equals(consultation)) {
                 tempQueue.enqueue(c);
-            } else {
-                found = true;
             }
         }
         
-        // Move everything back to the original queue
+        // Restore the queue
         while (!tempQueue.isEmpty()) {
             consultationQueue.enqueue(tempQueue.dequeue());
+        }
+    }
+    
+    /**
+     * Saves all consultations to file
+     * @return true if save was successful, false otherwise
+     */
+    private boolean saveConsultations() throws DataAccessException {
+        try {
+            boolean saved = consultationDAO.saveConsultations(consultationMap);
+            return saved;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error saving consultations", e);
+            throw new DataAccessException("Failed to save consultations", e);
+        }
+    }
+    
+    /**
+     * Loads consultations from file
+     */
+    @SuppressWarnings("unchecked")
+    private void loadConsultations() throws DataAccessException {
+        try {
+            MapInterface<String, Consultation> loadedConsultations = 
+                (MapInterface<String, Consultation>) consultationDAO.loadConsultations();
+            
+            if (loadedConsultations != null && !loadedConsultations.isEmpty()) {
+                // Clear existing data
+                consultationMap = new MyMap<>();
+                consultationList = new MyList<>();
+                consultationQueue = new MyQueue<>();
+                
+                // This is a workaround since MapInterface doesn't support iteration
+                // In a real implementation, consider adding an iterator to MapInterface
+                for (int i = 0; i < loadedConsultations.size(); i++) {
+                    Consultation c = loadedConsultations.get("" + i);
+                    if (c != null) {
+                        consultationMap.put(c.getConsultationID(), c);
+                        consultationList.add(c);
+                        
+                        // Add to queue if it's scheduled
+                        if (c.getStatus() == Consultation.Status.SCHEDULED) {
+                            consultationQueue.enqueue(c);
+                        }
+                    }
+                }
+                LOGGER.info(String.format("Loaded %d consultations from file", consultationMap.size()));
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error loading consultations", e);
+            throw new DataAccessException("Failed to load consultations", e);
         }
     }
     
@@ -241,7 +384,8 @@ public class ConsultationControl {
      * Generates a report of consultations for a specific doctor
      * @param doctorId ID of the doctor
      */
-    public void generateConsultationsByDoctorReport(String doctorId) {
+    public void generateConsultationsByDoctorReport(String doctorId) 
+            throws EntityNotFoundException, ValidationException, DataAccessException {
         Doctor doctor = findDoctorById(doctorId);
         if (doctor == null) {
             System.out.println("Doctor not found with ID: " + doctorId);
@@ -271,11 +415,13 @@ public class ConsultationControl {
         System.out.println("\nTotal Consultations for Dr. " + doctor.getName() + ": " + count);
     }
 
-    public void insertFollowUp(int index, Consultation followUp) {
+    public boolean insertFollowUp(int index, Consultation followUp) throws DataAccessException {
         if (index >= 0 && index <= consultationList.size()) {
             consultationList.add(index, followUp);
             consultationMap.put(followUp.getConsultationID(), followUp);
+            return saveConsultations();
         }
+        return false;
     }
     
     public Consultation searchConsultationByID(String id) {
@@ -313,9 +459,10 @@ public class ConsultationControl {
             }
             return ascending ? dateCompare : -dateCompare;
         });
+        saveConsultations();
     }
     
-    public void updateConsultationStatus(String consultationId, Consultation.Status newStatus) {
+    public boolean updateConsultationStatus(String consultationId, Consultation.Status newStatus) {
         Consultation consultation = consultationMap.get(consultationId);
         if (consultation != null) {
             consultation.setStatus(newStatus);
@@ -324,30 +471,73 @@ public class ConsultationControl {
             if (newStatus == Consultation.Status.COMPLETED) {
                 removeFromQueue(consultation);
             }
+            
+            // Save changes to file
+            return saveConsultations();
         }
+        return false;
     }
 
-    private Patient findPatientById(String patientId) {
+    // ====================
+    // Validation Helpers
+    // ====================
+    
+    private void validateInput(String value, String fieldName) throws ValidationException {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ValidationException(fieldName, "cannot be empty");
+        }
+    }
+    
+    private LocalDate validateAndParseDate(String dateStr) throws ValidationException {
+        try {
+            return LocalDate.parse(dateStr, DATE_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new ValidationException("Date", "must be in YYYY-MM-DD format", e);
+        }
+    }
+    
+    private LocalTime validateAndParseTime(String timeStr) throws ValidationException {
+        try {
+            return LocalTime.parse(timeStr, TIME_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new ValidationException("Time", "must be in HH:MM format", e);
+        }
+    }
+    
+    // ====================
+    // Data Access Helpers
+    // ====================
+    
+    private Patient findPatientById(String patientId) throws ValidationException, EntityNotFoundException {
+        validateInput(patientId, "Patient ID");
         for (int i = 0; i < patientList.size(); i++) {
             Patient p = patientList.get(i);
             if (p.getPatientID().equals(patientId)) {
                 return p;
             }
         }
-        return null;
+        throw new EntityNotFoundException("Patient", patientId);
     }
 
-    private Doctor findDoctorById(String doctorId) {
+    private Doctor findDoctorById(String doctorId) throws ValidationException, EntityNotFoundException {
+        validateInput(doctorId, "Doctor ID");
         for (int i = 0; i < doctorList.size(); i++) {
             Doctor d = doctorList.get(i);
             if (String.valueOf(d.getDoctorID()).equals(doctorId)) {
                 return d;
             }
         }
-        return null;
+        throw new EntityNotFoundException("Doctor", doctorId);
     }
 
-    private boolean isDoctorScheduled(Doctor doctor, String date, String time) {
+    private boolean isDoctorScheduled(Doctor doctor, String date, String time) 
+            throws ValidationException {
+        if (doctor == null) {
+            throw new ValidationException("Doctor", "cannot be null");
+        }
+        validateInput(date, "Date");
+        validateInput(time, "Time");
+        
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
             if (c.getDoctor().equals(doctor) && 

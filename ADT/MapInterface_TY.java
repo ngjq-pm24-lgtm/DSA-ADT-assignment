@@ -1,4 +1,4 @@
-package adt;
+package ADT;
 
 //source: https://github.com/nishantroy/Data-Structures-and-Algorithms/blob/master/HashMap/HashMapInterface.java
 

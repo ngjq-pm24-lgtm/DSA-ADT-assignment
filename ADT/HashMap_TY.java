@@ -1,7 +1,7 @@
 //TY
 
 
-package adt;
+package ADT;
 
 import enums.TimeSlot;
 import java.io.Serializable;

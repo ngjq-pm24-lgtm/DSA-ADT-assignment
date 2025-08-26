@@ -1,6 +1,6 @@
 //TY
 
-package adt;
+package ADT;
 
 import java.io.Serializable;
 import java.util.Comparator;
