@@ -34,7 +34,7 @@ public class Consultation {
         this.date = date;
         this.time = time;
         this.reason = reason;
-this.diagnosis = diagnosis;
+        this.diagnosis = diagnosis;
         this.prescription = prescription;
         this.notes = notes;
         this.status = status;

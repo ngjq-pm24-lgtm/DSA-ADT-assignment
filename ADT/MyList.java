@@ -1,6 +1,7 @@
 package ADT;
 
 import java.util.Comparator;
+import java.util.Iterator;
 
 public class MyList<T> implements ListInterface<T> {
     private static final int INITIAL_CAPACITY = 20;
@@ -13,20 +14,24 @@ public class MyList<T> implements ListInterface<T> {
     }
 
     @Override
-    public void add(T element) {
+    public boolean add(T element) {
+        if(element == null) return false;
+        
         ensureCapacity();
         list[size++] = element;
+        return true;
     }
 
     @Override
-    public void add(int index, T element) {
-        if (index < 0 || index > size) return;
+    public boolean add(int index, T element) {
+        if (index < 0 || index > size) return false;
         ensureCapacity();
         for (int i = size; i > index; i--) {
             list[i] = list[i - 1];
         }
         list[index] = element;
         size++;
+        return true;
     }
 
     @Override
@@ -83,5 +88,35 @@ public class MyList<T> implements ListInterface<T> {
                 }
             }
         } while (swapped);
+    }
+
+    @Override
+    public T remove(T item) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public boolean replace(int givenPosition, T newEntry) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public boolean contains(T anEntry) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public boolean isFull() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public Iterator<T> getIterator() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

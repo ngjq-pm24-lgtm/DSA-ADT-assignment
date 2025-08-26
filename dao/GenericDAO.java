@@ -57,7 +57,7 @@ public class GenericDAO<K,V> {
                     String phone = parts[2].trim();
 
                     Doctor doctor = new Doctor(doctorID, name, phone);
-                    doctorRecords.put(doctorID, doctor);
+                    doctorRecords.add(doctorID, doctor);
                 }
             }
             return doctorRecords;

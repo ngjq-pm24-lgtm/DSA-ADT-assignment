@@ -2,6 +2,7 @@ package boundary;
 
 import control.ConsultationControl;
 import Entity.Consultation;
+import exception.ValidationException;
 
 import java.util.Scanner;
 
@@ -70,8 +71,12 @@ public class ConsultationBoundary {
         String reason = scanner.nextLine();
 
         // Create consultation object (requires Patient & Doctor objects fetched via control)
-        Consultation consultation = control.createConsultation(patientId, doctorId, date, time, reason);
-        control.addConsultation(consultation);
+        try{
+            Consultation consultation = control.createConsultation(patientId, doctorId, date, time, reason);
+            control.addConsultation(consultation);
+        }catch(Exception e){
+            System.err.println("Error: " + e.getMessage());
+        }
         System.out.println("Consultation appointment booked successfully.");
     }
 
@@ -115,8 +120,13 @@ public class ConsultationBoundary {
             "", "", // diagnosis, prescription
             "Follow-up consultation based on consultation ID: " + base.getConsultationID()
         );
+        
+        try{
+            control.insertFollowUp(index + 1, followUp);
+        }catch(Exception e){
+            System.err.println("Error:" + e.getMessage());
+        }
 
-        control.insertFollowUp(index + 1, followUp);
         System.out.println("Follow-up consultation added after original consultation.");
     }
 
@@ -162,7 +172,11 @@ public class ConsultationBoundary {
             case 3:
                 System.out.print("\nEnter Doctor ID: ");
                 String doctorId = scanner.nextLine();
-                control.generateConsultationsByDoctorReport(doctorId);
+                try{
+                    control.generateConsultationsByDoctorReport(doctorId);
+                }catch(Exception e){
+                    System.err.println("Error:" + e.getMessage());
+                }
                 break;
             default:
                 System.out.println("Invalid choice. Please try again.");
@@ -194,7 +208,12 @@ public class ConsultationBoundary {
             Consultation consultationToCancel = control.getConsultationByIndex(index);
             if (consultationToCancel != null) {
                 // Use the ID to cancel via the control method
-                boolean success = control.cancelConsultation(consultationToCancel.getConsultationID());
+                boolean success = false;
+                try{
+                    success = control.cancelConsultation(consultationToCancel.getConsultationID());
+                }catch(Exception e){
+                    System.err.println("Error:" + e.getMessage());
+                }
                 if (success) {
                     System.out.println("\nSuccessfully cancelled consultation for " +
                         consultationToCancel.getPatient().getName() + " on " + consultationToCancel.getDate() + " at " + consultationToCancel.getTime());

@@ -54,7 +54,7 @@ public class ConsultationManager {
         
         // Add to queue and map
         consultationQueue.enqueue(consultation);
-        consultationMap.put(consultation.getConsultationID(), consultation);
+        consultationMap.add(consultation.getConsultationID(), consultation);
         return true;
     }
     

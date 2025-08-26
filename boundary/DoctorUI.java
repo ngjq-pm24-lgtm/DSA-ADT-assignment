@@ -4,13 +4,13 @@ import ADT.*;
 import java.util.Scanner;
 import Entity.Doctor;
 import enums.TimeSlot;
-import control.DoctorMaintenance;
+import control.DoctorManager;
 import Entity.TimeSlotKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 
-public class DoctorMaintenanceUI {
+public class DoctorUI {
     
     Scanner scanner = new Scanner(System.in);
     
@@ -460,10 +460,10 @@ public class DoctorMaintenanceUI {
     }
         
         String[] weekdays = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-        DoctorMaintenance docMaintenance = new DoctorMaintenance();
+        DoctorManager docManager = new DoctorManager();
         int largest = 0;
         for(int i=0; i<7; i++){
-            totalAvailableDoctorsByDay[i] = docMaintenance.countTotalAvailableDoctorsByDay(weekdays[i]);
+            totalAvailableDoctorsByDay[i] = docManager.countTotalAvailableDoctorsByDay(weekdays[i]);
             if(totalAvailableDoctorsByDay[i] > largest)
                 largest = totalAvailableDoctorsByDay[i];
         }
@@ -501,9 +501,6 @@ public class DoctorMaintenanceUI {
     System.out.println("===========================================================================================================================================");
 }
     
-    
-
-
     private String formatDoctorList(ListInterface<Doctor> doctors) {
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i <= doctors.size(); i++) {

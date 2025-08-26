@@ -1,11 +1,6 @@
 package control;
 
-import ADT.ListInterface;
-import ADT.MapInterface;
-import ADT.MyQueue;
-import ADT.MyList;
-import ADT.QueueInterface;
-import ADT.MyMap;
+import ADT.*;
 import Entity.Consultation;
 import Entity.Patient;
 import Entity.Doctor;
@@ -110,7 +105,7 @@ public class ConsultationControl {
         if (consultation == null) {
             throw new ValidationException("Consultation", "Consultation cannot be null");
         }
-        if (consultationMap.containsKey(consultation.getConsultationID())) {
+        if (consultationMap.contains(consultation.getConsultationID())) {
             throw new ValidationException("Consultation ID", 
                 String.format("Consultation with ID %s already exists", 
                     consultation.getConsultationID()));
@@ -119,7 +114,7 @@ public class ConsultationControl {
         try {
             consultationQueue.enqueue(consultation);
             consultationList.add(consultation);
-            consultationMap.put(consultation.getConsultationID(), consultation);
+            consultationMap.add(consultation.getConsultationID(), consultation);
             saveConsultations();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error adding consultation", e);
@@ -228,7 +223,7 @@ public class ConsultationControl {
      * @param index The index of the consultation to cancel
      * @return The cancelled Consultation object, or null if index is invalid
      */
-    public void cancelConsultation(String consultationId) 
+    public boolean cancelConsultation(String consultationId) 
             throws EntityNotFoundException, ValidationException, DataAccessException {
         validateInput(consultationId, "Consultation ID");
         
@@ -247,6 +242,7 @@ public class ConsultationControl {
             removeFromQueue(consultation);
             saveConsultations();
             LOGGER.info(String.format("Cancelled consultation with ID: %s", consultationId));
+            return true;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error cancelling consultation", e);
             throw new DataAccessException("Failed to cancel consultation", e);
@@ -309,7 +305,7 @@ public class ConsultationControl {
                 for (int i = 0; i < loadedConsultations.size(); i++) {
                     Consultation c = loadedConsultations.get("" + i);
                     if (c != null) {
-                        consultationMap.put(c.getConsultationID(), c);
+                        consultationMap.add(c.getConsultationID(), c);
                         consultationList.add(c);
                         
                         // Add to queue if it's scheduled
@@ -418,7 +414,7 @@ public class ConsultationControl {
     public boolean insertFollowUp(int index, Consultation followUp) throws DataAccessException {
         if (index >= 0 && index <= consultationList.size()) {
             consultationList.add(index, followUp);
-            consultationMap.put(followUp.getConsultationID(), followUp);
+            consultationMap.add(followUp.getConsultationID(), followUp);
             return saveConsultations();
         }
         return false;
@@ -459,7 +455,11 @@ public class ConsultationControl {
             }
             return ascending ? dateCompare : -dateCompare;
         });
-        saveConsultations();
+        try{
+            saveConsultations();
+        }catch(Exception e){
+            System.err.println("Error:" + e.getMessage());
+        }
     }
     
     public boolean updateConsultationStatus(String consultationId, Consultation.Status newStatus) {
@@ -473,7 +473,11 @@ public class ConsultationControl {
             }
             
             // Save changes to file
-            return saveConsultations();
+            try{
+                return saveConsultations();
+            }catch(Exception e){
+                System.err.println("Error:" + e.getMessage());
+            }
         }
         return false;
     }
@@ -549,4 +553,10 @@ public class ConsultationControl {
         }
         return false;
     }
+
+    public int getConsultationCount() {
+        return consultationList.size();
+    }
+
+
 }

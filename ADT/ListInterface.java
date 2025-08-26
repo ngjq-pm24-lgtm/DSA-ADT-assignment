@@ -1,13 +1,26 @@
 package ADT;
 
 import java.util.Comparator;
+import java.util.Iterator;
+
 
 public interface ListInterface<T> {
-    void add(T element);                        // Add at end
-    void add(int index, T element);             // Add at position
-    T get(int index);                           // Get element at index
-    T remove(int index);                        // Remove at index
-    boolean isEmpty();                          // Check if list is empty
-        int size();                                 // Number of elements
-    void sort(Comparator<T> comparator);        // Sort the list using a comparator
+
+   boolean add(T newEntry);
+   boolean add(int newPosition, T newEntry);
+   T remove(int givenPosition);
+   T remove(T item);
+   void clear();
+   boolean replace(int givenPosition, T newEntry);
+   T get(int givenPosition);
+   boolean contains(T anEntry);
+   int size();
+   boolean isEmpty();
+   boolean isFull();
+   void sort(Comparator<T> comparator);
+   Iterator<T> getIterator();
 }
+
+
+
+

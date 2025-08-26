@@ -1,12 +1,9 @@
 //TY
-
-
 package ADT;
 
-import enums.TimeSlot;
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Objects;
+
 
 //source: https://github.com/nishantroy/Data-Structures-and-Algorithms/blob/master/HashMap/HashMap.java
 //        https://github.com/nishantroy/Data-Structures-and-Algorithms/blob/master/HashMap/MapEntry.java
@@ -183,6 +180,10 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
     }
 
     
+    @Override
+    public boolean isEmpty(){
+        return size == 0;
+    }
 
 
     @Override

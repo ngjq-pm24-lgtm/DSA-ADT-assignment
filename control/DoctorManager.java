@@ -3,22 +3,22 @@ package control;
 import ADT.*;
 import Entity.*;
 import dao.GenericDAO;
-import boundary.DoctorMaintenanceUI;
+import boundary.DoctorUI;
 import java.util.Iterator;
 
-public class DoctorMaintenance {
+public class DoctorManager {
     private MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
     private MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable;
     private MapInterface<Integer, Doctor> doctorRecords;
     private GenericDAO DAO = new GenericDAO();
-    private DoctorMaintenanceUI doctorUI = new DoctorMaintenanceUI();
+    private DoctorUI doctorUI = new DoctorUI();
     private String doctorFile = "doctors.dat";
     private String doctorTextFile = "doctors.txt";
     private String dutyScheduleFile = "dutyScheduleTable.dat";
     private String availabilityTableFile = "availabilityTable.dat";
 
 
-    public DoctorMaintenance() {
+    public DoctorManager() {
         doctorRecords = DAO.retrieveFromFile(doctorFile);
         if(doctorRecords == null){
             doctorRecords = DAO.loadDoctorsFromTextFile(doctorTextFile);
@@ -41,7 +41,7 @@ public class DoctorMaintenance {
         }
     }
     
-    public void runDoctorMaintenance() {
+    public void runDoctorManager() {
         int choice;
         do {
           choice = doctorUI.getDoctorMaintenanceMenuChoice();
@@ -405,7 +405,7 @@ public class DoctorMaintenance {
     
     
     public static void main(String[] args) {
-        DoctorMaintenance doctorMaintenance = new DoctorMaintenance();
-        doctorMaintenance.runDoctorMaintenance();
+        DoctorManager doctorManager = new DoctorManager();
+        doctorManager.runDoctorManager();
     }
 }

@@ -1,4 +1,7 @@
 package ADT;
+
+import java.util.Comparator;
+
 public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_CAPACITY = 16;
@@ -20,7 +23,7 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
     }
 
     @Override
-    public void put(K key, V value) {
+    public boolean add(K key, V value) {
         if (key == null || value == null) {
             throw new IllegalArgumentException("Key and value cannot be null");
         }
@@ -44,7 +47,7 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
                 }
                 table[index] = new Entry<>(key, value);
                 size++;
-                return;
+                return true;
             } else if (table[index] == DELETED) {
                 // Remember the first deleted slot
                 if (firstDeleted == -1) {
@@ -53,7 +56,7 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
             } else if (table[index].key.equals(key)) {
                 // Key exists, update value
                 table[index].value = value;
-                return;
+                return true;
             }
             index = (index + 1) % capacity;
         } while (index != startIndex);
@@ -129,7 +132,7 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
      * @return true if this map contains a mapping for the specified key
      */
     @Override
-    public boolean containsKey(K key) {
+    public boolean contains(K key) {
         if (key == null) return false;
         
         int index = getIndex(key);
@@ -186,9 +189,34 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
         // Rehash all entries
         for (Entry<K, V> entry : oldTable) {
             if (entry != null && entry != DELETED) {
-                put(entry.key, entry.value);
+                add(entry.key, entry.value);
             }
         }
+    }
+
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public boolean resizeBackingTable(int length) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public MapEntry<K, V>[] getTable() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public K findLargestKey() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public MapEntry<K, V>[] sort(Comparator<K> comparator) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     // Inner class to represent key-value pairs
