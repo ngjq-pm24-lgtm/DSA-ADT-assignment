@@ -17,7 +17,7 @@ public class Payment {
         this.paymentMethod = paymentMethod;
         this.amount = amount;
 
-        // ✅ Auto-generate current date & time
+        //  Auto-generate current date & time
         LocalDateTime now = LocalDateTime.now();
         this.date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         this.time = now.format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -37,8 +37,6 @@ public class Payment {
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public void setAmount(double amount) { this.amount = amount; }
 
-    // No setters for date/time → always generated automatically
-
     @Override
     public String toString() {
         return "Payment ID: " + paymentId +
@@ -49,3 +47,4 @@ public class Payment {
                "\nTime: " + time;
     }
 }
+
