@@ -232,7 +232,7 @@ public int getPaymentMenu() {
     
     
 
-    // ---------------- Basic Inputs ---------------- //
+    // ---------------- Patient Registeration Form ---------------- //
     public String inputPatientName() {
         System.out.print("Enter patient name: ");
         return scanner.nextLine();
@@ -265,7 +265,6 @@ public int getPaymentMenu() {
     }
     return age;
 }
-
 
     public String inputBloodType() {
         System.out.print("Enter Blood Type: ");
@@ -301,6 +300,12 @@ public int getPaymentMenu() {
         System.out.print("Enter Email: ");
         return scanner.nextLine();
     }
+    
+    public String inputCourse() {
+    System.out.print("Enter Course (Full Name or 3-letter code): ");
+    return scanner.nextLine().trim().toUpperCase();
+}
+
 
     // ---------------- Output ---------------- //
     public void printPatientDetails(Patient patient) {
