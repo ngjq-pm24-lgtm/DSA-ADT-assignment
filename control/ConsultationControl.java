@@ -1,26 +1,17 @@
 package control;
 
 import ADT.*;
-import Entity.Consultation;
-import Entity.Patient;
-import Entity.Doctor;
+import Entity.*;
 import dao.ConsultationDAO;
-import exception.DataAccessException;
-import exception.EntityNotFoundException;
-import exception.ValidationException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import exception.*;
+import java.time.*;
+import java.time.format.*;
+import java.util.logging.*;
 
 public class ConsultationControl {
     private static final Logger LOGGER = Logger.getLogger(ConsultationControl.class.getName());
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+    // Time format is now managed by Consultation entity
     private QueueInterface<Consultation> consultationQueue;
     private ListInterface<Consultation> consultationList;
     private MapInterface<String, Consultation> consultationMap;
@@ -29,7 +20,7 @@ public class ConsultationControl {
     private final ConsultationDAO<String, Consultation> consultationDAO;
     
     // File path for data persistence
-    private static final String CONSULTATION_FILE = "data/consultations.dat";
+    // Data file path is now managed by ConsultationDAO
 
     public ConsultationControl(QueueInterface<Consultation> queue, 
                              ListInterface<Consultation> list,
@@ -209,6 +200,18 @@ public class ConsultationControl {
     public boolean isValidConsultationIndex(int index) {
         return index >= 0 && index < consultationList.size();
     }
+    
+    /**
+     * Retrieves a consultation by its index in the consultation list.
+     * @param index The index of the consultation to retrieve
+     * @return The consultation at the specified index, or null if index is invalid
+     */
+    public Consultation getConsultationByIndex(int index) {
+        if (isValidConsultationIndex(index)) {
+            return consultationList.get(index); // ListInterface uses 0-based indexing
+        }
+        return null;
+    }
 
     public int getTotalConsultations() throws DataAccessException {
         try {
@@ -288,7 +291,60 @@ public class ConsultationControl {
     /**
      * Loads consultations from file
      */
-    @SuppressWarnings("unchecked")
+    /**
+     * Validates if a patient exists in the system
+     * @param patientId The ID of the patient to validate
+     * @return true if patient exists, false otherwise
+     */
+    public boolean validatePatientExists(String patientId) {
+        if (patientId == null || patientId.trim().isEmpty()) {
+            return false;
+        }
+        for (int i = 1; i <= patientList.size(); i++) {
+            if (patientList.get(i).getPatientId().equals(patientId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Gets all consultations for a specific patient
+     * @param patientId The ID of the patient
+     * @return List of consultations for the patient
+     */
+    public ListInterface<Consultation> getConsultationsByPatient(String patientId) {
+        ListInterface<Consultation> result = new MyList<>();
+        if (!validatePatientExists(patientId)) {
+            return result; // Return empty list if patient doesn't exist
+        }
+        
+        for (int i = 1; i <= consultationList.size(); i++) {
+            Consultation c = consultationList.get(i);
+            if (c.getPatient().getPatientId().equals(patientId)) {
+                result.add(c);
+            }
+        }
+        return result;
+    }
+    
+    /**
+     * Checks if a patient has any active (scheduled or in-progress) consultations
+     * @param patientId The ID of the patient
+     * @return true if patient has active consultations, false otherwise
+     */
+    public boolean patientHasActiveConsultations(String patientId) {
+        for (int i = 1; i <= consultationList.size(); i++) {
+            Consultation c = consultationList.get(i);
+            if (c.getPatient().getPatientId().equals(patientId) && 
+                (c.getStatus() == Consultation.Status.SCHEDULED || 
+                 c.getStatus() == Consultation.Status.IN_PROGRESS)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     private void loadConsultations() throws DataAccessException {
         try {
             MapInterface<String, Consultation> loadedConsultations = 
@@ -305,12 +361,18 @@ public class ConsultationControl {
                 for (int i = 0; i < loadedConsultations.size(); i++) {
                     Consultation c = loadedConsultations.get("" + i);
                     if (c != null) {
-                        consultationMap.add(c.getConsultationID(), c);
-                        consultationList.add(c);
-                        
-                        // Add to queue if it's scheduled
-                        if (c.getStatus() == Consultation.Status.SCHEDULED) {
-                            consultationQueue.enqueue(c);
+                        // Only load consultations for existing patients
+                        if (validatePatientExists(c.getPatient().getPatientId())) {
+                            consultationMap.add(c.getConsultationID(), c);
+                            consultationList.add(c);
+                            
+                            // Add to queue if it's scheduled
+                            if (c.getStatus() == Consultation.Status.SCHEDULED) {
+                                consultationQueue.enqueue(c);
+                            }
+                        } else {
+                            LOGGER.warning("Skipped loading consultation " + c.getConsultationID() + 
+                                        " - patient " + c.getPatient().getPatientId() + " not found");
                         }
                     }
                 }
@@ -500,14 +562,6 @@ public class ConsultationControl {
         }
     }
     
-    private LocalTime validateAndParseTime(String timeStr) throws ValidationException {
-        try {
-            return LocalTime.parse(timeStr, TIME_FORMAT);
-        } catch (DateTimeParseException e) {
-            throw new ValidationException("Time", "must be in HH:MM format", e);
-        }
-    }
-    
     // ====================
     // Data Access Helpers
     // ====================
@@ -516,7 +570,7 @@ public class ConsultationControl {
         validateInput(patientId, "Patient ID");
         for (int i = 0; i < patientList.size(); i++) {
             Patient p = patientList.get(i);
-            if (p.getPatientID().equals(patientId)) {
+            if (p.getPatientId().equals(patientId)) {
                 return p;
             }
         }
@@ -542,7 +596,7 @@ public class ConsultationControl {
         validateInput(date, "Date");
         validateInput(time, "Time");
         
-        for (int i = 0; i < consultationList.size(); i++) {
+        for (int i = 1; i <= consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
             if (c.getDoctor().equals(doctor) && 
                 c.getDate().equals(date) && 
@@ -553,10 +607,97 @@ public class ConsultationControl {
         }
         return false;
     }
+    
+    /**
+     * Gets detailed information about a specific consultation
+     * @param consultationId The ID of the consultation
+     * @return Formatted string with consultation details, or null if not found
+     */
+    public String getConsultationDetails(String consultationId) {
+        Consultation c = consultationMap.get(consultationId);
+        if (c == null) {
+            return null;
+        }
+        
+        return String.format(
+            "=== Consultation Details ===\n" +
+            "ID: %s\n" +
+            "Date: %s at %s\n" +
+            "Status: %s\n" +
+            "\nPatient:\n" +
+            "- Name: %s\n" +
+            "- ID: %s\n" +
+            "- Contact: %s\n" +
+            "\nDoctor:\n" +
+            "- Name: %s\n" +
+            "- ID: %s\n" +
+            "\nReason: %s\n" +
+            "Diagnosis: %s\n" +
+            "Prescription: %s\n" +
+            "Notes: %s",
+            c.getConsultationID(),
+            c.getDate(), c.getTime(),
+            c.getStatus(),
+            c.getPatient().getName(),
+            c.getPatient().getPatientId(),
+            c.getPatient().getContactNo(),
+            c.getDoctor().getName(),
+            c.getDoctor().getDoctorID(),
+            c.getReason(),
+            c.getDiagnosis().isEmpty() ? "N/A" : c.getDiagnosis(),
+            c.getPrescription().isEmpty() ? "N/A" : c.getPrescription(),
+            c.getNotes().isEmpty() ? "None" : c.getNotes()
+        );
+    }
+
 
     public int getConsultationCount() {
         return consultationList.size();
     }
 
-
+    /**
+     * Gets consultation history for a specific patient with optional filters
+     * @param patientId The ID of the patient
+     * @param startDate Start date in YYYY-MM-DD format (inclusive), or null for no start date filter
+     * @param endDate End date in YYYY-MM-DD format (inclusive), or null for no end date filter
+     * @param statusFilter Status to filter by, or null for all statuses
+     * @return Filtered list of consultations sorted by date (newest first)
+     */
+    public ListInterface<Consultation> getPatientConsultationHistory(String patientId, 
+                                                                  String startDate, 
+                                                                  String endDate,
+                                                                  Consultation.Status statusFilter) {
+        ListInterface<Consultation> history = new MyList<>();
+        
+        // Get all consultations for the patient
+        for (int i = 1; i <= consultationList.size(); i++) {
+            Consultation c = consultationList.get(i);
+            if (!c.getPatient().getPatientId().equals(patientId)) {
+                continue;
+            }
+            
+            // Apply filters
+            if (statusFilter != null && c.getStatus() != statusFilter) {
+                continue;
+            }
+            
+            if (startDate != null && c.getDate().compareTo(startDate) < 0) {
+                continue;
+            }
+            
+            if (endDate != null && c.getDate().compareTo(endDate) > 0) {
+                continue;
+            }
+            
+            history.add(c);
+        }
+        
+        // Sort by date (newest first) and time (latest first)
+        history.sort((c1, c2) -> {
+            int dateCompare = c2.getDate().compareTo(c1.getDate());
+            return dateCompare != 0 ? dateCompare : c2.getTime().compareTo(c1.getTime());
+        });
+        
+        return history;
+    }
 }

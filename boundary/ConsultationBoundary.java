@@ -2,7 +2,6 @@ package boundary;
 
 import control.ConsultationControl;
 import Entity.Consultation;
-import exception.ValidationException;
 
 import java.util.Scanner;
 
