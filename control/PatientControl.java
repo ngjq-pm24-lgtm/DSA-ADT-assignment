@@ -12,12 +12,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import Entity.Appointment;
 import Entity.Payment;
-import boundary.Card;
+import boundary.MedicalCard;
 import java.time.format.DateTimeParseException;
-
-
-
-
 
 public class PatientControl {
     private MapInterface<String, Payment> paymentMap = new HashMap<>();
@@ -96,7 +92,7 @@ public void registerNewPatient() {
     String medicalHistory = patientUI.inputMedicalHistory();
     String address = inputValidAddress();
     String email = inputValidEmail();
-    String course = inputCourse();
+    String course = inputValidCourse();
 
     // Generate Patient ID automatically
     String id = generatePatientId(dob, course);
@@ -108,19 +104,18 @@ public void registerNewPatient() {
     // Store in patient map
     Scanner scanner = new Scanner(System.in);
     patientMap.put(id, patient);
-    System.out.println("Patient registered successfully. Patient ID: " + id);
+    System.out.print("\nPatient registered successfully. Patient ID: " + id + "\n");
 
     // Ask user if they want to generate ID card
     Scanner sc = new Scanner(System.in);
     String choice;
     while (true) {
-        System.out.print("Do you want to generate the patient ID card? (Y/N): ");
+        System.out.print("\nDo you want to generate the patient ID card? (Y/N): \n");
         choice = sc.nextLine().trim().toUpperCase();
      if (choice.equals("Y")) {
-      // Open the Card JFrame with patient info
+      // Open the MedicalCard JFrame with patient info
         PatientManagement pm = new PatientManagement();
-        Card cardUI = new Card(patient, pm);
-        cardUI.setVisible(true);
+        MedicalCard cardUI = new MedicalCard(patient, pm);
 
           break;
         } else if (choice.equals("N")) {
@@ -156,83 +151,154 @@ public void registerNewPatient() {
         return prefix + formattedNum;
     }
 
-    // ------------------ Per-field validation methods ------------------ //
-    private String inputValidPatientName() {
-        String name;
-        while (true) {
-            name = patientUI.inputPatientName();
-            if (name.matches("^[a-zA-Z\\s]{1,50}$")) break;
+    // ------------------ Registration form validation methods ------------------ //
+private String inputValidPatientName() {
+    String name;
+    int attempts = 0; // track invalid attempts
+
+    while (true) {
+        name = patientUI.inputPatientName();
+
+        if (name.matches("^[a-zA-Z\\s]{1,50}$")) {
+            return name; //  valid name, return it
+        } else {
             System.out.println("Invalid Name. Only letters & spaces allowed (max 50).");
+            attempts++;
+
+            if (attempts >= 5) {
+                System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
+                patientUI.getPatientManagementMenu(); // call menu again
+                return null; // stop input, return to menu
+            }
         }
-        return name;
     }
+}
+
 
 private String inputValidIC() {
     String ic;
+    int attempts = 0; // track invalid attempts
+
     while (true) {
         ic = patientUI.inputPatientIC().trim();
 
         // Validate format: must be 12 digits
         if (!ic.matches("\\d{12}")) {
             System.out.println("Invalid IC. Must be 12 digits only.");
-            continue;
-        }
+            attempts++;
+        } else {
+            // Check for duplicates in patientMap
+            boolean exists = false;
+            MapEntry<String, Patient>[] entries = patientMap.getTable();
+            for (MapEntry<String, Patient> e : entries) {
+                if (e != null && !e.isRemoved() && e.getValue().getICNo().equals(ic)) {
+                    exists = true;
+                    break;
+                }
+            }
 
-        // Check for duplicates in patientMap
-        boolean exists = false;
-        MapEntry<String, Patient>[] entries = patientMap.getTable();
-        for (MapEntry<String, Patient> e : entries) {
-            if (e != null && !e.isRemoved() && e.getValue().getICNo().equals(ic)) {
-                exists = true;
-                break;
+            if (exists) {
+                System.out.println("IC number has already been registered.");
+                attempts++;
+            } else {
+                return ic; //  valid and unique → return IC
             }
         }
 
-        if (exists) {
-            System.out.println("IC number has already been registered.");
-            continue;
+        // Too many invalid attempts
+        if (attempts >= 5) {
+            System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
+            patientUI.getPatientManagementMenu(); //  go back to menu
+            return null; // stop input
         }
-
-        break; //  valid and unique
     }
-    return ic;
 }
 
 
-    private String inputValidGender() {
-        String gender;
-        while (true) {
-            gender = patientUI.inputPatientGender();
-            if (gender.matches("(?i)^(M|F)$")) break;
+
+private String inputValidGender() {
+    String gender;
+    int attempts = 0; // counter for invalid input
+
+    while (true) {
+        gender = patientUI.inputPatientGender().trim();
+
+        if (gender.matches("(?i)^(M|F)$")) {
+            break; // valid input
+        } else {
+            attempts++;
             System.out.println("Invalid Gender. Must be M or F.");
+
+            if (attempts >= 5) {
+                System.out.println("Too many invalid attempts. Returning to Patient Management Menu...");
+                patientUI.getPatientManagementMenu();
+                return null; // exit method
+            }
         }
-        return gender;
     }
 
-    private int inputValidAge() {
-        int age;
-        while (true) {
-            age = patientUI.inputPatientAge();
-            if (age >= 17  && age <= 100) break;
-            System.out.println("Invalid Age. Must be at least 17.");
-        }
-        return age;
-    }
+    return gender;
+}
 
-    private String inputValidBloodType() {
-        String bloodType;
-        while (true) {
-            bloodType = patientUI.inputBloodType();
-            if (bloodType.matches("^(A\\+|A-|B\\+|B-|AB\\+|AB-|O\\+|O-)$")) break;
+
+private int inputValidAge() {
+    int age;
+    int invalidAttempts = 0;
+
+    while (true) {
+        age = patientUI.inputPatientAge();
+
+        if (age >= 17 && age <= 100) {
+            return age; //  valid, return age
+        } else {
+            invalidAttempts++;
+            System.out.println("Invalid Age. Must be between 17 and 100. Attempt " 
+                                + invalidAttempts + "/5");
+
+            //  More than 5 invalid attempts → auto back to menu
+            if (invalidAttempts >= 5) {
+                System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
+                patientUI.getPatientManagementMenu();
+                return -1; // return dummy age to indicate failure
+            }
+        }
+    }
+}
+
+
+private String inputValidBloodType() {
+    String bloodType;
+    int attempts = 0;  // counter for invalid attempts
+
+    while (true) {
+        bloodType = patientUI.inputBloodType();
+        if (bloodType.matches("^(A\\+|A-|B\\+|B-|AB\\+|AB-|O\\+|O-)$")) {
+            break; // valid blood type
+        } else {
+            attempts++;
             System.out.println("Invalid Blood Type. Allowed: A+/-, B+/-, AB+/-, O+/- . ");
+            
+            if (attempts >= 5) {
+                System.out.println("Too many invalid attempts. Returning to Patient Management Menu...");
+                // Redirect back to the menu
+                PatientManagement menu = new PatientManagement();
+                menu.getPatientManagementMenu();
+                return null; // return null to stop further execution
+            }
         }
-        return bloodType;
     }
 
-   private String inputValidDateOfBirth(int expectedAge) {
+    return bloodType;
+}
+
+private String inputValidDateOfBirth(int expectedAge) {
     String dob;
+    int attempts = 0; // counter for invalid attempts
+
     while (true) {
         dob = patientUI.inputDateOfBirth();
+        attempts++;
+
         try {
             LocalDate date = LocalDate.parse(dob, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             LocalDate today = LocalDate.now();
@@ -240,135 +306,240 @@ private String inputValidIC() {
             //  Invalid: Future date
             if (date.isAfter(today)) {
                 System.out.println("Date of Birth must not be in the future.");
-                continue;
             }
-
             //  Invalid: Same as today
-            if (date.isEqual(today)) {
+            else if (date.isEqual(today)) {
                 System.out.println("Date of Birth cannot be today's date.");
-                continue;
             }
-
             //  Invalid: Age mismatch
-            int calculatedAge = java.time.Period.between(date, today).getYears();
-            if (calculatedAge != expectedAge) {
-                System.out.println("Date of Birth does not match the entered age (" + expectedAge + ").");
-                continue;
+            else {
+                int calculatedAge = java.time.Period.between(date, today).getYears();
+                if (calculatedAge != expectedAge) {
+                    System.out.println("Date of Birth does not match the entered age (" + expectedAge + ").");
+                } else {
+                    //  Valid input
+                    return dob;
+                }
             }
-
-            //  Valid
-            break;
 
         } catch (Exception e) {
             System.out.println("Invalid Date Format. Use yyyy-MM-dd.");
         }
+
+        //  Exceeded 5 attempts
+        if (attempts >= 5) {
+            System.out.println("\n️ Too many invalid attempts. Returning to Patient Management Menu...");
+            PatientManagement pm = new PatientManagement();
+            pm.getPatientManagementMenu();  // auto back to menu
+            return null; // return null since DOB was not valid
+        }
     }
-    return dob;
 }
 
 
-    private String inputValidContactNo() {
-        String contact;
-        while (true) {
-            contact = patientUI.inputContactNo();
-            if (contact.matches("^\\d{1,11}$")) break;
+private String inputValidContactNo( ) {
+    String contact = null;
+    int attempts = 0;
+
+    while (attempts < 5) {
+        contact = patientUI.inputContactNo();
+        if (contact.matches("^\\d{1,11}$")) {
+            return contact; //  valid -> return immediately
+        } else {
             System.out.println("Invalid Personal Contact No. Max 11 digits.");
+            attempts++;
         }
-        return contact;
     }
 
-    private String inputValidEmergencyNo(String contactNo) {
+    // If reached here, user failed 5 times
+    System.out.println("\nToo many invalid attempts. Returning to Patient Management Menu...");
+    patientUI.getPatientManagementMenu();  //  go back to menu
+    return null; // return null since no valid input
+}
+
+private String inputValidEmergencyNo(String contactNo) {
     String emergency;
+    int attempts = 0;
+
     while (true) {
         emergency = patientUI.inputEmergencyNo();
+        attempts++;
+
         if (!emergency.matches("^\\d{1,11}$")) {
             System.out.println("Invalid Emergency Contact No. Max 11 digits.");
-            continue;
-        }
-        if (emergency.equals(contactNo)) {
+        } else if (emergency.equals(contactNo)) {
             System.out.println("Emergency Contact No. cannot be the same as Personal Contact No.");
-            continue;
+        } else {
+            return emergency; //  valid input
         }
-        break;
+
+        // Check if attempts reached 5
+        if (attempts >= 5) {
+            System.out.println("\nToo many invalid attempts. Returning to Patient Management Menu...");
+            // Call back to menu
+            PatientManagement pm = new PatientManagement();
+            pm.getPatientManagementMenu();
+            return null; // Exit method, no valid emergency number
+        }
     }
-    return emergency;
 }
 
-    private String inputValidAddress() {
-        String address;
-        while (true) {
-            address = patientUI.inputAddress();
-            if (address.length() <= 50) break;
-            System.out.println("Invalid Address. Max 50 characters.");
-        }
-        return address;
-    }
 
-    private String inputValidEmail() {
+
+private String inputValidAddress( ) {
+    String address;
+    int attempts = 0;
+    final int MAX_ATTEMPTS = 5;
+
+    while (true) {
+        address = patientUI.inputAddress();
+
+        if (address.length() <= 50) {
+            return address; //  valid, return
+        } else {
+            System.out.println("Invalid Address. Max 50 characters.");
+            attempts++;
+        }
+
+        //  If exceeded max retries, return to menu
+        if (attempts >= MAX_ATTEMPTS) {
+            System.out.println("Too many invalid attempts. Returning to Patient Management Menu...");
+            patientUI.getPatientManagementMenu(); 
+            return null; // stop current operation
+        }
+    }
+}
+
+
+ private String inputValidEmail( ) {
     String email;
+    int attempts = 0; // Track invalid attempts
+
     while (true) {
         email = patientUI.inputEmail().trim();
 
         // Validate format
         if (!email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
             System.out.println("Invalid Email format.");
-            continue;
-        }
-
-        // Check for duplicates in patientMap
-        boolean exists = false;
-        MapEntry<String, Patient>[] entries = patientMap.getTable();
-        for (MapEntry<String, Patient> e : entries) {
-            if (e != null && !e.isRemoved() && e.getValue().getEmail().equalsIgnoreCase(email)) {
-                exists = true;
-                break;
-            }
-        }
-
-        if (exists) {
-            System.out.println("Email address has already been registered.");
-            continue;
-        }
-
-        break; // valid and unique
-    }
-    return email;
-}
-
-
-    public String inputCourse() {
-        String courseCode = null;
-
-        while (courseCode == null) {
-            System.out.print("Enter Course (Full Name or 3-letter code): ");
-            String input = scanner.nextLine().trim().toUpperCase().replaceAll("\\s+", "");
-
-            boolean found = false;
-            for (MapEntry<String, String> entry : COURSE_MAP.getTable()) {
-                if (entry != null && !entry.isRemoved()) {
-                    if (entry.getValue().equals(input)) {
-                        courseCode = entry.getValue();
-                        found = true;
-                        break;
-                    }
+            attempts++;
+        } else {
+            // Check for duplicates in patientMap
+            boolean exists = false;
+            MapEntry<String, Patient>[] entries = patientMap.getTable();
+            for (MapEntry<String, Patient> e : entries) {
+                if (e != null && !e.isRemoved() && 
+                    e.getValue().getEmail().equalsIgnoreCase(email)) {
+                    exists = true;
+                    break;
                 }
             }
 
-            if (!found && COURSE_MAP.containsKey(input)) {
-                courseCode = COURSE_MAP.get(input);
-            }
-
-            if (courseCode == null) {
-                System.out.println("Invalid course. Please try again.");
+            if (exists) {
+                System.out.println("Email address has already been registered.");
+                attempts++;
+            } else {
+                break; // valid and unique
             }
         }
 
-        System.out.println("Selected Course: " + courseCode);
-        return courseCode;
+        // Check attempt limit
+        if (attempts >= 5) {
+            System.out.println("\nToo many invalid attempts. Returning to Patient Management Menu...");
+            patientUI.getPatientManagementMenu();
+            return null; // or break out depending on your flow
+        }
     }
-    
 
-    // ------------------ Other Methods ------------------ //
+    return email;
+}
+
+ 
+ private String inputValidCourse() {
+    String courseCode = null;
+    int attempts = 0;
+
+    while (true) {
+        String input = patientUI.inputCourse(); // call input method
+        courseCode = null; // reset each attempt
+
+        //  Check if input matches course full name or 3-letter code
+        boolean found = false;
+        for (MapEntry<String, String> entry : COURSE_MAP.getTable()) {
+            if (entry != null && !entry.isRemoved()) {
+                if (entry.getValue().equals(input)) { 
+                    courseCode = entry.getValue(); 
+                    found = true; 
+                    break;
+                }
+            }
+        }
+
+        if (!found && COURSE_MAP.containsKey(input)) {
+            courseCode = COURSE_MAP.get(input);
+        }
+
+        //  Valid course found
+        if (courseCode != null) {
+            return courseCode;
+        }
+
+        // Invalid course handling
+        attempts++;
+        System.out.println("Invalid course. Please try again. (" + attempts + "/5)");
+
+        if (attempts >= 5) {
+            System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
+            patientUI.getPatientManagementMenu(); // return to menu
+            return null; // stop input
+        }
+    }
+}
+
+
+    // ------------------ Edit Patient Module  ------------------ //
+ 
+  public void listAllPatients() {
+    StringBuilder sb = new StringBuilder();
+
+    // Table Header (Patient ID first)
+    sb.append(String.format("%-15s %-20s %-15s %-8s %-5s %-10s %-15s %-15s %-25s %-20s %-25s\n",
+            "Patient ID", "Patient Name", "IC No", "Gender", "Age", "BloodType",
+            "Date Of Birth", "Contact No", "Emergency No", "Medical History", "Address", "Email"));
+    sb.append("=".repeat(200)).append("\n"); // separator line (slightly longer)
+
+    MapEntry<String, Patient>[] entries = patientMap.getTable();
+    boolean found = false;
+
+    for (MapEntry<String, Patient> e : entries) {
+        if (e != null && !e.isRemoved()) {
+            Patient p = e.getValue();
+
+            // Patient ID shown first
+            sb.append(String.format("%-15s %-20s %-15s %-8s %-5d %-10s %-15s %-15s %-25s %-20s %-25s\n",
+                    p.getPatientId(),
+                    p.getName(),
+                    p.getICNo(),
+                    p.getGender(),
+                    p.getAge(),
+                    p.getBloodType(),
+                    p.getDateOfBirth(),
+                    p.getContactNo(),
+                    p.getEmergencyNo(),
+                    p.getMedicalHistory(),
+                    p.getAddress(),
+                    p.getEmail()));
+            found = true;
+        }
+    }
+
+    if (!found) {
+        sb.append("No patient records found.\n");
+    }
+
+    // Send to UI for display
+    patientUI.listAllPatients(sb.toString());
+}
+ 
     public Patient searchPatient(String id) {
         Patient p = patientMap.get(id);
         if (p != null) patientUI.printPatientDetails(p);
@@ -428,7 +599,7 @@ private String inputValidIC() {
                 break;
             case 0:
                 done = true; // exit update menu
-                break;
+                break; 
             default:
                 System.out.println("Invalid choice.");
         }
@@ -446,46 +617,7 @@ private String inputValidIC() {
         System.out.println("Patient not found.");
         return false;
     }
-
-  public void listAllPatients() {
-    StringBuilder sb = new StringBuilder();
-
-    // Table Header
-    sb.append(String.format("%-20s %-15s %-8s %-5s %-10s %-15s %-15s %-15s %-25s %-20s %-25s\n",
-            "Patient Name", "IC No", "Gender", "Age", "BloodType", "Date Of Birth",
-            "Contact No", "Emergency No", "Medical History", "Address", "Email"));
-    sb.append("=".repeat(180)).append("\n"); // separator line
-
-    MapEntry<String, Patient>[] entries = patientMap.getTable();
-    boolean found = false;
-
-    for (MapEntry<String, Patient> e : entries) {
-        if (e != null && !e.isRemoved()) {
-            Patient p = e.getValue();
-
-            sb.append(String.format("%-20s %-15s %-8s %-5d %-10s %-15s %-15s %-15s %-25s %-20s %-25s\n",
-                    p.getName(),
-                    p.getICNo(),
-                    p.getGender(),
-                    p.getAge(),
-                    p.getBloodType(),
-                    p.getDateOfBirth(),
-                    p.getContactNo(),
-                    p.getEmergencyNo(),
-                    p.getMedicalHistory(),
-                    p.getAddress(),
-                    p.getEmail()));
-            found = true;
-        }
-    }
-
-    if (!found) {
-        sb.append("No patient records found.\n");
-    }
-
-    // Send to UI for display
-    patientUI.listAllPatients(sb.toString());
-}
+    // ------------------  Queue Entry Module  ------------------ //
 
     
     public void addQueueEntry() {
@@ -742,24 +874,24 @@ public static String inputDate() {
     }
 
 
-// Input time (digits only, HHMM, 24-hour format, allowed 09:00–21:59)
+// Input time (HH:MM, 24-hour format, allowed 09:00–21:59)
 public String inputTime() {
     Scanner sc = new Scanner(System.in);
     String time;
 
     while (true) {
-        System.out.print("Enter time (HHMM, 24-hour format, allowed 0900 to 2159): ");
+        System.out.print("Enter time (HH:MM, 24-hour format, allowed 09:00 to 21:59): ");
         time = sc.nextLine().trim();
 
-        // Must be 4 digits
-        if (!time.matches("\\d{4}")) {
-            System.out.println("Invalid format. Enter 4 digits (HHMM).");
+        // Must match HH:MM format
+        if (!time.matches("\\d{2}:\\d{2}")) {
+            System.out.println("Invalid format. Enter as HH:MM (e.g., 09:00).");
             continue;
         }
 
         // Extract hour and minute
         int hour = Integer.parseInt(time.substring(0, 2));
-        int minute = Integer.parseInt(time.substring(2, 4));
+        int minute = Integer.parseInt(time.substring(3, 5));
 
         // Validate hour
         if (hour < 9 || hour > 21) {
@@ -773,9 +905,10 @@ public String inputTime() {
             continue;
         }
 
-        return time; // valid
+        return time; // valid input in HH:MM format
     }
 }
+
 
 
 public void viewAppointments() {
@@ -864,7 +997,7 @@ private void generateReceipt() {
     // Generate payment ID
     String paymentId = String.format("PAY%04d", paymentCounter++);
 
-    // ✅ Date & time auto-generated in Payment
+    //  Date & time auto-generated in Payment
     Payment payment = new Payment(paymentId, patientId, method, fee);
     paymentMap.put(paymentId, payment);
 
@@ -885,7 +1018,7 @@ private void viewPaymentHistory() {
             System.out.println("Payment Method: " + p.getPaymentMethod());
             System.out.println("Date: " + p.getDate());
             System.out.println("Time: " + p.getTime()); 
-            System.out.println("Amount: RM  " + p.getAmount());
+            System.out.println("Amount: RM " + p.getAmount());
             found = true;
         }
     }
