@@ -39,20 +39,38 @@ public class MedicalCard {
 
         System.out.println("====================================");
 
-        Scanner sc = new Scanner(System.in);
-        System.out.print("Do you want to save this card as a PNG image? (yes/no): ");
-        String choice = sc.nextLine().trim().toLowerCase();
+Scanner sc = new Scanner(System.in);
+String choice;
+int attempts = 0; // counter for invalid inputs
+final int MAX_ATTEMPTS = 5;
 
-        if (choice.equals("yes")) {
-            saveCardAsImage(patient);
-        } else {
+while (true) {
+    System.out.print("Do you want to save this card as a PNG image? (yes/no): ");
+    choice = sc.nextLine().trim().toLowerCase();
+
+    if (choice.equals("yes") || choice.equals("y")) {
+        saveCardAsImage(patient);
+        break;
+    } else if (choice.equals("no") || choice.equals("n")) {
+        if (pm != null) {
+            pm.getPatientManagementMenu();
+        }
+        break;
+    } else {
+        attempts++;
+        System.out.println("Invalid input. Please enter Yes or No. Attempt " + attempts + "/" + MAX_ATTEMPTS);
+        if (attempts >= MAX_ATTEMPTS) {
+            System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
             if (pm != null) {
                 pm.getPatientManagementMenu();
             }
+            break;
         }
     }
+}
+}
 
-    // ✅ Save patient card as PNG image (with aligned colons)
+    //  Save patient card as PNG image (with aligned colons)
     private void saveCardAsImage(Patient patient) {
         int width = 700;
         int height = 350;
