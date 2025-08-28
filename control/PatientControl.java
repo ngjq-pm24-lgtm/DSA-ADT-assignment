@@ -15,6 +15,10 @@ import Entity.Payment;
 import boundary.MedicalCard;
 import java.time.format.DateTimeParseException;
 
+
+
+
+
 public class PatientControl {
     private MapInterface<String, Payment> paymentMap = new HashMap<>();
     private Scanner scanner = new Scanner(System.in);
