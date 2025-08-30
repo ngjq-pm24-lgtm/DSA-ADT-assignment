@@ -1,107 +1,174 @@
+//koo jing yik
 package control;
 
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 import Entity.Patient;
-import boundary.PatientUI;
-import ADT.*;
+import boundary.PatientManagement;
+import ADT.MapInterface;
+import ADT.HashMap;
+import ADT.MapEntry;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import Entity.Appointment;
 import Entity.Payment;
 import boundary.MedicalCard;
-import dao.GenericDAO;
 import java.time.format.DateTimeParseException;
-
-
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
 
 public class PatientControl {
-    private static MapInterface<String, Payment> paymentMap = new HashMap<>();
+    private MapInterface<String, Payment> paymentMap = new HashMap<>();
     private Scanner scanner = new Scanner(System.in);
     private int paymentCounter = 1;
-    private static MapInterface<String, Appointment> appointmentMap = new HashMap<>();
-    private static MapInterface<String, Patient> patientMap;
-    private PatientUI patientUI;
-    private static QueueInterface<Patient> patientQueue; // store Patients in queue
-    private static String patientHashMapFile = "data/patientHashMap.dat";
-    private static String patientQueueFile = "data/patientQueue.dat";
-    private static String patientTextFile = "data/patients.txt";
-    
-    
+    private MapInterface<String, Patient> patientMap;
+    private PatientManagement patientUI;
+    private Queue<String> patientQueue; // store Patient IDs in queue
+        
      // Existing constructor
-    public PatientControl(PatientUI patientUI) {
-        this.patientUI = patientUI;
-
-        patientMap = GenericDAO.retrieveFromFile(patientHashMapFile);
-        patientQueue = GenericDAO.retrieveFromFile(patientQueueFile);
-        if (patientMap == null || patientQueue == null) {
-            patientMap = new HashMap<>(30);
-            patientQueue = new ArrayQueue<>(30);
-            if (GenericDAO.loadPatientsFromTextFile(patientTextFile, patientMap, patientQueue)){
-                GenericDAO.saveToFile(patientMap, patientHashMapFile);
-                GenericDAO.saveToFile(patientQueue, patientQueueFile);
-            } else {
-                System.out.println("Cannot initialize patient records from text file.");
-            }
-        }
+    public PatientControl(PatientManagement patientUI) {
+        this.patientUI = patientUI;   
+        this.patientMap = new HashMap<>();
+        this.patientQueue = new LinkedList<>();
    }   
-
+    
+        // ------------------  Selection Course Module  ------------------ //
+    
     private static final HashMap<String, String> COURSE_MAP = new HashMap<>();
     static {
-        COURSE_MAP.add("ACCOUNTING", "ACC");
-        COURSE_MAP.add("FINANCE", "FIN");
-        COURSE_MAP.add("BUSINESS", "COM");
-        COURSE_MAP.add("ACCOUNTINGFINANCE", "AFN");
-        COURSE_MAP.add("MARKETING", "MKT");
-        COURSE_MAP.add("MANAGEMENT", "MGT");
-        COURSE_MAP.add("HUMANRESOURCEMANAGEMENT", "HRM");
-        COURSE_MAP.add("ISLAMICBANKINGFINANCE", "IBF");
-        COURSE_MAP.add("MANAGEMENTMATHEMATICSCOMPUTING", "RMM");
-        COURSE_MAP.add("INTERACTIVESOFTWARETECHNOLOGY", "RST");
-        COURSE_MAP.add("ENTERPRISEINFORMATIONSYSTEMS", "REI");
-        COURSE_MAP.add("INFORMATIONSECURITY", "RIS");
-        COURSE_MAP.add("SOFTWARESYSTEMSDEVELOPMENT", "RSD");
-        COURSE_MAP.add("ELECTRICALELECTRONICENGINEERING", "EEE");
-        COURSE_MAP.add("TELECOMMUNICATIONSENGINEERING", "TEL");
-        COURSE_MAP.add("MANUFACTURINGINDUSTRIALTECHNOLOGY", "MIT");
-        COURSE_MAP.add("MATERIALSMANUFACTURINGTECHNOLOGY", "MTM");
-        COURSE_MAP.add("CONSTRUCTIONMANAGEMENTECONOMICS", "CEM");
-        COURSE_MAP.add("ARCHITECTURE", "ARC");
-        COURSE_MAP.add("REALESTATEMANAGEMENT", "REM");
-        COURSE_MAP.add("QUANTITYSURVEYING", "QSB");
-        COURSE_MAP.add("INTERIORARCHITECTURE", "IAE");
-        COURSE_MAP.add("MEDIAMANAGEMENT", "MMC");
-        COURSE_MAP.add("ADVERTISINGMARKETING", "AMC");
-        COURSE_MAP.add("GRAPHICDESIGN", "GDS");
-        COURSE_MAP.add("INTERIORDESIGN", "IDS");
-        COURSE_MAP.add("EVENTMANAGEMENT", "EMM");
-        COURSE_MAP.add("PSYCHOLOGY", "PSY");
-        COURSE_MAP.add("SOCIOLOGYSOCIALDEVELOPMENT", "SDS");
-        COURSE_MAP.add("INTERNATIONALSTUDIES", "ISD");
-        COURSE_MAP.add("BIOTECHNOLOGY", "BTH");
-        COURSE_MAP.add("APPLIEDCHEMISTRY", "ACS");
-        COURSE_MAP.add("ENVIRONMENTALSCIENCE", "ENV");
-        COURSE_MAP.add("FOODSCIENCE", "FDS");
-        COURSE_MAP.add("MARINESCIENCE", "MSC");
+        COURSE_MAP.put("ACCOUNTING", "ACC");
+        COURSE_MAP.put("FINANCE", "FIN");
+        COURSE_MAP.put("BUSINESS", "COM");
+        COURSE_MAP.put("ACCOUNTINGFINANCE", "AFN");
+        COURSE_MAP.put("MARKETING", "MKT");
+        COURSE_MAP.put("MANAGEMENT", "MGT");
+        COURSE_MAP.put("HUMANRESOURCEMANAGEMENT", "HRM");
+        COURSE_MAP.put("ISLAMICBANKINGFINANCE", "IBF");
+        COURSE_MAP.put("MANAGEMENTMATHEMATICSCOMPUTING", "RMM");
+        COURSE_MAP.put("INTERACTIVESOFTWARETECHNOLOGY", "RST");
+        COURSE_MAP.put("ENTERPRISEINFORMATIONSYSTEMS", "REI");
+        COURSE_MAP.put("INFORMATIONSECURITY", "RIS");
+        COURSE_MAP.put("SOFTWARESYSTEMSDEVELOPMENT", "RSD");
+        COURSE_MAP.put("ELECTRICALELECTRONICENGINEERING", "EEE");
+        COURSE_MAP.put("TELECOMMUNICATIONSENGINEERING", "TEL");
+        COURSE_MAP.put("MANUFACTURINGINDUSTRIALTECHNOLOGY", "MIT");
+        COURSE_MAP.put("MATERIALSMANUFACTURINGTECHNOLOGY", "MTM");
+        COURSE_MAP.put("CONSTRUCTIONMANAGEMENTECONOMICS", "CEM");
+        COURSE_MAP.put("ARCHITECTURE", "ARC");
+        COURSE_MAP.put("REALESTATEMANAGEMENT", "REM");
+        COURSE_MAP.put("QUANTITYSURVEYING", "QSB");
+        COURSE_MAP.put("INTERIORARCHITECTURE", "IAE");
+        COURSE_MAP.put("MEDIAMANAGEMENT", "MMC");
+        COURSE_MAP.put("ADVERTISINGMARKETING", "AMC");
+        COURSE_MAP.put("GRAPHICDESIGN", "GDS");
+        COURSE_MAP.put("INTERIORDESIGN", "IDS");
+        COURSE_MAP.put("EVENTMANAGEMENT", "EMM");
+        COURSE_MAP.put("PSYCHOLOGY", "PSY");
+        COURSE_MAP.put("SOCIOLOGYSOCIALDEVELOPMENT", "SDS");
+        COURSE_MAP.put("INTERNATIONALSTUDIES", "ISD");
+        COURSE_MAP.put("BIOTECHNOLOGY", "BTH");
+        COURSE_MAP.put("APPLIEDCHEMISTRY", "ACS");
+        COURSE_MAP.put("ENVIRONMENTALSCIENCE", "ENV");
+        COURSE_MAP.put("FOODSCIENCE", "FDS");
+        COURSE_MAP.put("MARINESCIENCE", "MSC");
+    }
+    
+     public static void main(String[] args) {
+        PatientManagement patientUI = new PatientManagement();
+        PatientControl patientControl = new PatientControl(patientUI);
+
+        boolean exit = false;
+
+        while (!exit) {
+            int choice = patientControl.getValidatedMainMenuChoice();
+
+            switch (choice) {
+                case 1: patientControl.registerNewPatient(); break;
+                case 2: patientControl.handlePatientRecordMenu();  break;
+                case 3: patientControl.handleQueueMenu(); break;
+                case 4: patientControl.handlePaymentMenu(); break;
+                case 0:
+                    patientUI.displayMessage("Exiting system... Goodbye!");
+                    exit = true;
+                    break;
+            }
+        }
     }
     
     
-    // ------------------ Register New Patient ------------------ //
+    public int getValidatedMainMenuChoice() {
+    int choice = -1;
+    while (true) {
+        try {
+            choice = patientUI.getPatientManagementMenu(); 
+            if (choice >= 0 && choice <= 4) {
+                return choice;
+            } else {
+                patientUI.displayMessage("Invalid choice. Please enter 0-4.");
+            }
+        } catch (NumberFormatException e) {
+            patientUI.displayMessage("Invalid input. Please enter a number.");
+        }
+    }
+}
+
+    
+
+
+    // ------------------ Register New Patient Module ------------------ //
 public void registerNewPatient() {
     System.out.println("\n--- Register New Patient ---");
 
     // Collect patient info
+     // Name
     String name = inputValidPatientName();
+    if (name == null) return; // stop registration and go back to menu
+
+    // IC
     String ic = inputValidIC();
+    if (ic == null) return; // stop registration and go back to menu
+
+    // Gender
     String gender = inputValidGender();
+    if (gender == null) return;
+
+    // Age
     int age = inputValidAge();
+    if (age == -1) return;
+
+    // Blood Type
     String bloodType = inputValidBloodType();
+    if (bloodType == null) return;
+
+    // Date of Birth
     String dob = inputValidDateOfBirth(age);
+    if (dob == null) return;
+
+    // Contact No
     String contactNo = inputValidContactNo();
+    if (contactNo == null) return;
+
+    // Emergency No
     String emergencyNo = inputValidEmergencyNo(contactNo);
+    if (emergencyNo == null) return;
+
+    // Medical History
     String medicalHistory = patientUI.inputMedicalHistory();
+
+    // Address
     String address = inputValidAddress();
+    if (address == null) return;
+
+    // Email
     String email = inputValidEmail();
+    if (email == null) return;
+
+    // Course
     String course = inputValidCourse();
+    if (course == null) return;
+
 
     // Generate Patient ID automatically
     String id = generatePatientId(dob, course);
@@ -112,7 +179,7 @@ public void registerNewPatient() {
 
     // Store in patient map
     Scanner scanner = new Scanner(System.in);
-    patientMap.add(id, patient);
+    patientMap.put(id, patient);
     System.out.print("\nPatient registered successfully. Patient ID: " + id + "\n");
 
     // Ask user if they want to generate ID card
@@ -123,7 +190,7 @@ public void registerNewPatient() {
         choice = sc.nextLine().trim().toUpperCase();
      if (choice.equals("Y")) {
       // Open the MedicalCard JFrame with patient info
-        PatientUI pm = new PatientUI();
+        PatientManagement pm = new PatientManagement();
         MedicalCard cardUI = new MedicalCard(patient, pm);
 
           break;
@@ -160,29 +227,64 @@ public void registerNewPatient() {
         return prefix + formattedNum;
     }
 
-    // ------------------ Registration form validation methods ------------------ //
-private String inputValidPatientName() {
-    String name;
-    int attempts = 0; // track invalid attempts
-
-    while (true) {
-        name = patientUI.inputPatientName();
-
-        if (name.matches("^[a-zA-Z\\s]{1,50}$")) {
-            return name; //  valid name, return it
-        } else {
-            System.out.println("Invalid Name. Only letters & spaces allowed (max 50).");
-            attempts++;
-
-            if (attempts >= 5) {
-                System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
-                patientUI.getPatientManagementMenu(); // call menu again
-                return null; // stop input, return to menu
-            }
+    
+    
+    // ---------------- Validate Edit Patient Menu Module ----------------
+    public void handlePatientRecordMenu() {
+    boolean recordExit = false;
+    while (!recordExit) {
+        int recordChoice = patientUI.getPatientRecordMenu();
+        switch (recordChoice) {
+            case 1: // View all
+                listAllPatients();   
+                break;
+            case 2: // Search
+                String searchId = patientUI.promptPatientId("search");
+                searchPatient(searchId);
+                break;
+            case 3: // Update
+                String updateId = patientUI.promptPatientId("update");
+                updatePatientField(updateId);
+                break;
+            case 4: // Delete
+                String delId = patientUI.promptPatientId("delete");
+                deletePatient(delId);
+                break;
+            case 0:
+                recordExit = true;   //  back to Patient Management Menu
+                break;
+            default:
+                patientUI.displayMessage("Invalid choice.");
         }
     }
 }
 
+    private String inputValidPatientName() {
+    String name;
+    int attempts = 0;
+    final int MAX_ATTEMPTS = 5;
+
+    while (true) {
+        name = patientUI.inputPatientName().trim();
+
+        
+        // Allow only alphabets, spaces, and must not be empty
+        if (!name.matches("^[A-Za-z ]+$")) {
+            System.out.println("Invalid Name. Only alphabets and spaces are allowed.");
+            attempts++;
+        } else if (name.length() < 2 || name.length() > 50) {
+            System.out.println("Invalid Name length. Must be between 2 and 50 characters.");
+            attempts++;
+        } else {
+            return name; //  valid name
+        }
+
+        if (attempts >= MAX_ATTEMPTS) {
+            System.out.println("\nToo many invalid attempts! Returning to Patient Management Menu...");
+            return null; // fail → return to menu
+        }
+    }
+}
 
 private String inputValidIC() {
     String ic;
@@ -290,7 +392,7 @@ private String inputValidBloodType() {
             if (attempts >= 5) {
                 System.out.println("Too many invalid attempts. Returning to Patient Management Menu...");
                 // Redirect back to the menu
-                PatientUI menu = new PatientUI();
+                PatientManagement menu = new PatientManagement();
                 menu.getPatientManagementMenu();
                 return null; // return null to stop further execution
             }
@@ -338,7 +440,7 @@ private String inputValidDateOfBirth(int expectedAge) {
         //  Exceeded 5 attempts
         if (attempts >= 5) {
             System.out.println("\n️ Too many invalid attempts. Returning to Patient Management Menu...");
-            PatientUI pm = new PatientUI();
+            PatientManagement pm = new PatientManagement();
             pm.getPatientManagementMenu();  // auto back to menu
             return null; // return null since DOB was not valid
         }
@@ -386,7 +488,7 @@ private String inputValidEmergencyNo(String contactNo) {
         if (attempts >= 5) {
             System.out.println("\nToo many invalid attempts. Returning to Patient Management Menu...");
             // Call back to menu
-            PatientUI pm = new PatientUI();
+            PatientManagement pm = new PatientManagement();
             pm.getPatientManagementMenu();
             return null; // Exit method, no valid emergency number
         }
@@ -483,7 +585,7 @@ private String inputValidAddress( ) {
             }
         }
 
-        if (!found && COURSE_MAP.contains(input)) {
+        if (!found && COURSE_MAP.containsKey(input)) {
             courseCode = COURSE_MAP.get(input);
         }
 
@@ -503,58 +605,78 @@ private String inputValidAddress( ) {
         }
     }
 }
-
+ 
 
     // ------------------ Edit Patient Module  ------------------ //
- 
-  public void listAllPatients() {
-    StringBuilder sb = new StringBuilder();
+  
+  
+    // ------------------ view Patient Report Module  ------------------ //  
+    private void listAllPatients() {
+    String fullReport = patientUI.generatePatientReport(patientMap);
+    patientUI.displayPatientReport(fullReport);
 
-    // Table Header (Patient ID first)
-    sb.append(String.format("%-15s %-20s %-15s %-8s %-5s %-10s %-15s %-15s %-25s %-20s %-25s\n",
-            "Patient ID", "Patient Name", "IC No", "Gender", "Age", "BloodType",
-            "Date Of Birth", "Contact No", "Emergency No", "Medical History", "Address", "Email"));
-    sb.append("=".repeat(200)).append("\n"); // separator line (slightly longer)
+    while (true) {
+        System.out.print("Do you want to download this report as PNG? (Y/N): ");
+        String input = scanner.nextLine().trim().toLowerCase();
 
-    MapEntry<String, Patient>[] entries = patientMap.getTable();
-    boolean found = false;
-
-    for (MapEntry<String, Patient> e : entries) {
-        if (e != null && !e.isRemoved()) {
-            Patient p = e.getValue();
-
-            // Patient ID shown first
-            sb.append(String.format("%-15s %-20s %-15s %-8s %-5d %-10s %-15s %-15s %-25s %-20s %-25s\n",
-                    p.getPatientId(),
-                    p.getName(),
-                    p.getICNo(),
-                    p.getGender(),
-                    p.getAge(),
-                    p.getBloodType(),
-                    p.getDateOfBirth(),
-                    p.getContactNo(),
-                    p.getEmergencyNo(),
-                    p.getMedicalHistory(),
-                    p.getAddress(),
-                    p.getEmail()));
-            found = true;
+        if (input.equals("y") || input.equals("yes")) {
+            System.out.println("Downloading report...");
+            // pass frame size (match display frame)
+            exportReportAsPNG(fullReport, new Dimension(1800, 800));
+            break;
+        } else if (input.equals("n") || input.equals("no")) {
+            System.out.println("Returning to previous menu...");
+            break;
+        } else {
+            System.out.println("Invalid input. Please enter Y/Yes or N/No.");
         }
     }
-
-    if (!found) {
-        sb.append("No patient records found.\n");
-    }
-
-    // Send to UI for display
-    patientUI.listAllPatients(sb.toString());
 }
- 
+
+    private void exportReportAsPNG(String reportContent, Dimension frameSize) {
+    try {
+        String[] lines = reportContent.split("\n");
+
+        int width = frameSize.width - 20; // leave padding
+        int lineHeight = 25;
+        int height = Math.max(frameSize.height, lineHeight * (lines.length + 1));
+
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, width, height);
+
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Monospaced", Font.PLAIN, 16));
+
+        int y = lineHeight;
+        for (String line : lines) {
+            g.drawString(line, 10, y);
+            y += lineHeight;
+        }
+
+        g.dispose();
+
+        File file = new File("PatientReport.png");
+        ImageIO.write(image, "png", file);
+        System.out.println("Report saved as " + file.getAbsolutePath());
+
+    } catch (Exception e) {
+        System.out.println("Error generating PNG: " + e.getMessage());
+    }
+}
+    
+        // ------------------  Search Patient Module  ------------------ //
+
     public Patient searchPatient(String id) {
         Patient p = patientMap.get(id);
         if (p != null) patientUI.printPatientDetails(p);
         else System.out.println("No patient found with ID: " + id);
         return p;
     }
+    
+        // ------------------  Update Patient Module  ------------------ //
     
         public void updatePatientField(String patientId) {
     Patient patient = patientMap.get(patientId);
@@ -615,10 +737,11 @@ private String inputValidAddress( ) {
         if (!done) System.out.println("Field updated successfully.");
     }
 }
+    // ------------------  delete patient Module  ------------------ //
 
 
     public boolean deletePatient(String id) {
-        if (patientMap.contains(id)) {
+        if (patientMap.containsKey(id)) {
             patientMap.remove(id);
             System.out.println("Patient deleted successfully.");
             return true;
@@ -626,9 +749,59 @@ private String inputValidAddress( ) {
         System.out.println("Patient not found.");
         return false;
     }
-    // ------------------  Queue Entry Module  ------------------ //
-
     
+    
+    
+        // ------------------  Queue Entry Module  ------------------ //
+    
+      // ---------------- Walk-in Queue Entry Validation Module ---------------- //
+    
+    public void handleQueueMenu() {
+    boolean queueExit = false;
+    while (!queueExit) {
+        int queueChoice = patientUI.getQueueEntryMenu(); // still UI
+        switch (queueChoice) {
+            case 1:
+                addQueueEntry();
+                break;
+            case 2:
+                viewQueueEntries();
+                break;
+            case 3:
+                deleteQueueEntry();
+                break;
+            case 0:
+                queueExit = true;
+                break;
+            default:
+                patientUI.displayMessage("Invalid choice.");
+        }
+    }
+}
+    
+    // ------------------ View Queue Entries Report Module  ------------------ //
+private void viewQueueEntries() {
+    String fullReport = patientUI.generateQueueReport(patientQueue, patientMap); // pass queue + map
+    patientUI.displayQueueReport(fullReport);
+
+    while (true) {
+        System.out.print("Do you want to download this queue report as PNG? (Y/N): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+
+        if (input.equals("y") || input.equals("yes")) {
+            System.out.println("Downloading report...");
+            patientUI.exportQueueReportAsPNG(fullReport, new Dimension(1200, 800));
+            break;
+        } else if (input.equals("n") || input.equals("no")) {
+            System.out.println("Returning to previous menu...");
+            break;
+        } else {
+            System.out.println("Invalid input. Please enter Y/Yes or N/No.");
+        }
+    }
+}
+
+     // ------------------ add Queue Entries Module  ------------------ //
     public void addQueueEntry() {
     Scanner scanner = new Scanner(System.in);
     System.out.print("Enter Patient ID to add to queue (Format: YYCCCXXXX): ");
@@ -640,327 +813,34 @@ private String inputValidAddress( ) {
         return;
     }
 
-    Patient patient = patientMap.get(id);
     // Optional: check if patient exists in patientMap
-    if (patient == null) {
+    if (!patientMap.containsKey(id)) {
         System.out.println("No patient found with this ID.");
         return;
     }
 
-    patientQueue.enqueue(patient);
+    patientQueue.add(id);
     System.out.println("Patient " + id + " added to queue.");
 }
 
 
-public void viewQueueEntries() {
-    if (patientQueue.isEmpty()) {
-        System.out.println("The queue is empty.");
-        return;
-    }
-
-    System.out.println("\n--- Current Queue Entries ---");
-    System.out.printf("%-5s %-15s\n", "No", "Patient ID");
-    System.out.println("==============================");
-
-    int index = 1;
-    for (int i=0; i<patientQueue.size(); i++) {
-        System.out.printf("%-5d %-15s\n", index++, patientQueue.get(i).getPatientId());
-    }
-}
-
+  // ---------------- Delete Queue Entry Module ---------------- //
 
 public void deleteQueueEntry() {
     if (patientQueue.isEmpty()) {
         System.out.println("The queue is empty. Nothing to delete.");
         return;
     }
-    
-    boolean invalid;
-    do{
-        invalid = false;
-        viewQueueEntries();
-        System.out.print("\nPatient at front of the queue: " + patientQueue.peek().getPatientId());
-
-        System.out.print("\nConfirm to remove this patient? (Y/N): ");
-        char choice = scanner.nextLine().charAt(0);
-
-        switch (choice) {
-            case 'Y':
-            case 'y':
-                Patient removedPatient = patientQueue.dequeue();
-                System.out.println("Patient " + removedPatient.getPatientId() + " removed from queue.");
-                break;
-            case 'N':
-            case 'n':
-                System.out.println("Removal cancelled.");
-                break;
-            default:
-                System.out.println("Invalid choice. Please try again.");
-                invalid = true;
-        }
-    }while(invalid);
-}
-
-
-// ------------------ Appointment Menu methods ------------------ //
-public void handleAppointmentMenu() {
-    int choice;
-    do {
-        choice = patientUI.getAppointmentMenu();
-        switch (choice) {
-            case 1: // Schedule new appointment
-                String consultationType = inputConsultationType();
-                String patientIdOrName = inputPatientIdOrName();
-                String reason = inputReason();
-                String date = inputDate();
-                String time = inputTime();
-
-                // Save appointment
-                Appointment appointment = new Appointment(patientIdOrName, consultationType, reason, date, time);
-                appointmentMap.add(patientIdOrName, appointment);
-
-                System.out.println("\nAppointment Scheduled Successfully:");
-                System.out.println(appointment);
-                break;
-                
-            case 2: // View appointment list
-                  viewAppointments();
-                break;
-                
-            case 3: // Search a patient appointment
-                  System.out.print("Enter Patient ID to search: ");
-                  String searchId = scanner.nextLine().trim();
-                  MapEntry<String, Appointment>[] entries = appointmentMap.getTable();
-                  boolean found = false;
-
-                  System.out.println("\n--- Appointment Record for Patient: " + searchId + " ---");
-                  System.out.printf("%-15s %-35s %-20s %-12s %-8s\n",
-                  "Patient ID", "Consultation Type", "Reason", "Date", "Time");
-                   System.out.println("-------------------------------------------------------------------------------------------");
-
-                for (MapEntry<String, Appointment> e : entries) {
-                     if (e != null && !e.isRemoved()) {
-                     Appointment appt = e.getValue();
-                         if (appt.getPatientId().equalsIgnoreCase(searchId)) {
-                         System.out.printf("%-15s %-35s %-20s %-12s %-8s\n",
-                         appt.getPatientId(),
-                         appt.getConsultationType(),
-                         appt.getReason(),
-                         appt.getDate(),
-                         appt.getTime());
-                         found = true;
-            }
-        }
-    }
-
-    if (!found) {
-        System.out.println("No appointment found for Patient ID: " + searchId);
-    }
-    break;
-
-            case 4: // Cancel appointment
-                System.out.print("Enter Patient ID to cancel appointment: ");
-                String cancelId = new Scanner(System.in).nextLine().trim();
-                if (appointmentMap.contains(cancelId)) {
-                    appointmentMap.remove(cancelId);
-                    System.out.println("Appointment for Patient " + cancelId + " has been canceled.");
-                } else {
-                    System.out.println("No appointment found for Patient ID: " + cancelId);
-                }
-                break;
-
-            case 0:
-                System.out.println("Returning to previous menu...");
-                break;
-
-            default:
-                System.out.println("Invalid choice.");
-        }
-    } while (choice != 0);
-}
-
-
-
-
-// ------------------ Appointment-related methods ------------------ //
-
-// Input consultation type from predefined list
-public String inputConsultationType() {
-    String[] consultations = {
-        "General Practitioner (GP) Consultation",
-        "Pediatric Consultation",
-        "Obstetrics & Gynecology (O&G) Consultation",
-        "Dermatology Consultation",
-        "ENT (Ear, Nose, Throat) Consultation",
-        "Dental Consultation",
-        "Ophthalmology Consultation",
-        "Orthopedic Consultation",
-        "Cardiology Consultation",
-        "Neurology Consultation",
-        "Endocrinology Consultation",
-        "Psychiatry / Mental Health Consultation",
-        "Nutrition & Diet Consultation",
-        "Physiotherapy / Rehabilitation Consultation",
-        "Specialist Clinics"
-    };
-
-    System.out.println("\nSelect Consultation Type:");
-    for (int i = 0; i < consultations.length; i++) {
-        System.out.println((i + 1) + ". " + consultations[i]);
-    }
-
-    int choice = -1;
-    while (choice < 1 || choice > consultations.length) {
-        System.out.print("Enter choice (1-" + consultations.length + "): ");
-        try {
-            choice = Integer.parseInt(new Scanner(System.in).nextLine());
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Enter digits only.");
-        }
-    }
-
-    return consultations[choice - 1];
-}
-
-// Input Patient ID or Name
-// Input Patient ID or Name with retry limit
-public String inputPatientIdOrName() {
-    String input;
-    int attempts = 0;
-    final int MAX_ATTEMPTS = 5;
-
-    while (true) {
-        System.out.print("Enter Patient ID or Name: ");
-        input = new Scanner(System.in).nextLine().trim();
-        boolean found = false;
-
-        // Check if ID or name exists in patientMap
-        MapEntry<String, Patient>[] entries = patientMap.getTable();
-        for (MapEntry<String, Patient> e : entries) {
-            if (e != null && !e.isRemoved()) {
-                Patient p = e.getValue();
-                if (p.getPatientId().equalsIgnoreCase(input) || 
-                    p.getName().equalsIgnoreCase(input)) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (found) {
-            return input; //  Valid input found
-        } else {
-            attempts++;
-            System.out.println("Patient not found. Please enter a valid registered patient.");
-            if (attempts >= MAX_ATTEMPTS) {
-                System.out.println("\nToo many invalid attempts. Returning to Appointment Menu...");
-                return null; //  Indicate failure (go back to Appointment Menu)
-            }
-        }
+    System.out.print("Enter Patient ID to remove from queue: ");
+    String id = new Scanner(System.in).nextLine().trim();
+    if (patientQueue.remove(id)) {
+        System.out.println("Patient " + id + " removed from queue.");
+    } else {
+        System.out.println("Patient ID not found in queue.");
     }
 }
 
-
-// Input reason
-public String inputReason() {
-    System.out.print("Enter reason for appointment: ");
-    return new Scanner(System.in).nextLine().trim();
-}
-
-// Input date (digits only)
-// Input date in format YYYY-MM-DD (must be future date)
-public static String inputDate() {
-        Scanner sc = new Scanner(System.in);
-        String inputDate;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-        while (true) {
-            System.out.print("Enter date (YYYY-MM-DD): ");
-            inputDate = sc.nextLine().trim();
-
-            try {
-                // Try to parse
-                LocalDate date = LocalDate.parse(inputDate, formatter);
-
-                // Must be in the future
-                if (date.isAfter(LocalDate.now())) {
-                    return inputDate; // valid
-                } else {
-                    System.out.println("Date must be in the future. Try again.");
-                }
-
-            } catch (DateTimeParseException e) {
-                System.out.println("Invalid format. Please enter in YYYY-MM-DD format.");
-            }
-        }
-    }
-
-// Input time (HH:MM, 24-hour format, allowed 09:00–21:59)
-public String inputTime() {
-    Scanner sc = new Scanner(System.in);
-    String time;
-
-    while (true) {
-        System.out.print("Enter time (HH:MM, 24-hour format, allowed 09:00 to 21:59): ");
-        time = sc.nextLine().trim();
-
-        // Must match HH:MM format
-        if (!time.matches("\\d{2}:\\d{2}")) {
-            System.out.println("Invalid format. Enter as HH:MM (e.g., 09:00).");
-            continue;
-        }
-
-        // Extract hour and minute
-        int hour = Integer.parseInt(time.substring(0, 2));
-        int minute = Integer.parseInt(time.substring(3, 5));
-
-        // Validate hour
-        if (hour < 9 || hour > 21) {
-            System.out.println("Invalid hour. Must be between 09 and 21.");
-            continue;
-        }
-
-        // Validate minutes
-        if (minute < 0 || minute > 59) {
-            System.out.println("Invalid minutes. Must be between 00 and 59.");
-            continue;
-        }
-
-        return time; // valid input in HH:MM format
-    }
-}
-
-
-
-public void viewAppointments() {
-    MapEntry<String, Appointment>[] entries = appointmentMap.getTable();
-    boolean found = false;
-
-    System.out.println("\n--- Appointment List ---");
-    System.out.printf("%-15s %-35s %-20s %-12s %-8s\n",
-            "Patient ID", "Consultation Type", "Reason", "Date", "Time");
-    System.out.println("-------------------------------------------------------------------------------------------");
-
-    for (MapEntry<String, Appointment> e : entries) {
-        if (e != null && !e.isRemoved()) {
-            Appointment appt = e.getValue();
-            System.out.printf("%-15s %-35s %-20s %-12s %-8s\n",
-                    appt.getPatientId(),
-                    appt.getConsultationType(),
-                    appt.getReason(),
-                    appt.getDate(),
-                    appt.getTime());
-            found = true;
-        }
-    }
-
-    if (!found) {
-        System.out.println("No appointments scheduled.");
-    }
-}
-
-
-// ------------------ Payment Menu Logic ------------------ //
+// ------------------ Payment Menu Valiidate Module ------------------ //
 public void handlePaymentMenu() {
     int choice;
     do {
@@ -984,6 +864,9 @@ public void handlePaymentMenu() {
     } while (choice != 0);
 }
 
+  // ---------------- Generate Receipt Module ---------------- //
+
+
 private void generateReceipt() {
     Scanner sc = new Scanner(System.in);
     String patientId;
@@ -991,7 +874,7 @@ private void generateReceipt() {
     // Validate patient ID
     System.out.print("Enter Patient ID: ");
     patientId = sc.nextLine().trim().toUpperCase();
-    if (!patientMap.contains(patientId)) {
+    if (!patientMap.containsKey(patientId)) {
         System.out.println("Patient not found. Please enter a valid Patient ID.");
         return;
     }
@@ -1020,91 +903,49 @@ private void generateReceipt() {
 
     //  Date & time auto-generated in Payment
     Payment payment = new Payment(paymentId, patientId, method, fee);
-    paymentMap.add(paymentId, payment);
+    paymentMap.put(paymentId, payment);
 
     System.out.println("\n--- Payment Receipt ---");
     System.out.println(payment);
 }
 
+  // ---------------- View Payment History Report Module ---------------- //
+public void viewPaymentHistory() {
+    // Generate report as string (even if empty)
+    String fullReport = patientUI.generatePaymentHistoryReport(paymentMap, patientMap);
 
-private void viewPaymentHistory() {
-    boolean found = false;
-    MapEntry<String, Payment>[] entries = paymentMap.getTable();
-    for (MapEntry<String, Payment> e : entries) {
-        if (e != null && !e.isRemoved()) {
-            Payment p = e.getValue();
-            System.out.println("------------------------");
-            System.out.println("Patient ID: " + p.getPatientId());
-            System.out.println("Payment ID: " + p.getPaymentId());
-            System.out.println("Payment Method: " + p.getPaymentMethod());
-            System.out.println("Date: " + p.getDate());
-            System.out.println("Time: " + p.getTime()); 
-            System.out.println("Amount: RM " + p.getAmount());
-            found = true;
+    // Display report via PatientManagement UI
+    patientUI.displayPaymentHistoryReport(fullReport);
+
+    // Ask user if they want to download
+    while (true) {
+        System.out.print("\nDo you want to download this report as PNG? (Y/N): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+
+        if (input.equals("y") || input.equals("yes")) {
+            System.out.println("Downloading report...");
+            patientUI.exportPaymentHistoryAsPNG(fullReport, new Dimension(1200, 800));
+            break;
+        } else if (input.equals("n") || input.equals("no")) {
+            System.out.println("Returning to previous menu...");
+            break;
+        } else {
+            System.out.println("Invalid input. Please enter Y/Yes or N/No.");
         }
-    }
-    if (!found) {
-        System.out.println("No payment records found.");
     }
 }
 
+  // ---------------- Cancel Payment Module  ---------------- //
 private void cancelPayment() {
     System.out.print("Enter Payment ID to remove: ");
     String paymentId = new java.util.Scanner(System.in).nextLine().trim();
-    if (paymentMap.contains(paymentId)) {
+    if (paymentMap.containsKey(paymentId)) {
         paymentMap.remove(paymentId);
         System.out.println("Payment " + paymentId + " has been removed.");
     } else {
         System.out.println("Payment ID not found.");
     }
 }
-// ------------------ Input Patient ID with Validation ------------------ //
-public String inputPatientId() {
-    String patientId;
-    while (true) {
-        System.out.print("Enter Patient ID: ");
-        patientId = scanner.nextLine().trim().toUpperCase();
-
-        // Validate ID exists in patientMap
-        if (patientMap.contains(patientId)) break;
-        System.out.println("Patient not found. Please enter a valid Patient ID.");
-    }
-    return patientId;
 }
-
-// ------------------ Input Payment Method with Validation ------------------ //
-public int inputPaymentMethod() {
-    int method = -1;
-    do {
-        System.out.println("Select Payment Method:");
-        System.out.println("1. Cash");
-        System.out.println("2. Credit Card");
-        System.out.println("3. Touch 'n Go");
-        System.out.print("Enter choice (1-3): ");
-        try {
-            method = Integer.parseInt(scanner.nextLine());
-            if (method < 1 || method > 3) {
-                System.out.println("Invalid choice. Please select 1, 2, or 3.");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input. Enter digits only.");
-        }
-    } while (method < 1 || method > 3);
-    return method;
-}
-
-// ------------------ Display Payment Message ------------------ //
-public void displayMessage(String msg) {
-    System.out.println(msg);
-}
-
-// ------------------ Display Payment Receipt ------------------ //
-public void displayPaymentReceipt(String receipt) {
-    System.out.println("\n--- Payment Receipt ---");
-    System.out.println(receipt);
-}
-
-}
-
 
     
