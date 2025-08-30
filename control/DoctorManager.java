@@ -4,19 +4,23 @@ import ADT.*;
 import Entity.*;
 import dao.GenericDAO;
 import boundary.DoctorUI;
+import enums.TimeSlot;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Iterator;
 
 public class DoctorManager {
-    private MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
-    private MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable;
-    private MapInterface<Integer, Doctor> doctorRecords;
+    private static MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
+    private static MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable;
+    private static MapInterface<Integer, Doctor> doctorRecords;
     private GenericDAO DAO = new GenericDAO();
     private DoctorUI doctorUI = new DoctorUI();
-    private String doctorFile = "doctors.dat";
-    private String doctorTextFile = "doctors.txt";
-    private String dutyScheduleFile = "dutyScheduleTable.dat";
-    private String availabilityTableFile = "availabilityTable.dat";
-
+    private static String doctorFile = "doctors.dat";
+    private static String doctorTextFile = "doctors.txt";
+    private static String dutyScheduleFile = "dutyScheduleTable.dat";
+    private static String availabilityTableFile = "availabilityTable.dat";
 
     public DoctorManager() {
         doctorRecords = DAO.retrieveFromFile(doctorFile);
@@ -260,6 +264,30 @@ public class DoctorManager {
         } while (choice != 0);
     }
     
+    public static MapInterface<TimeSlotKey, ListInterface<Doctor>> getDutyScheduleTable() {
+        return dutyScheduleTable;
+    }
+
+    public static MapInterface<TimeSlotKey, ListInterface<Doctor>> getAvailabilityTable() {
+        return availabilityTable;
+    }
+
+    public static MapInterface<Integer, Doctor> getDoctorRecords() {
+        return doctorRecords;
+    }
+
+    public static String getDoctorFile() {
+        return doctorFile;
+    }
+
+    public static String getDutyScheduleFile() {
+        return dutyScheduleFile;
+    }
+
+    public static String getAvailabilityTableFile() {
+        return availabilityTableFile;
+    }
+    
     public boolean assignDoctorToSlotDuty(TimeSlotKey slot, Doctor doctor) {
         
         ListInterface<Doctor> dutyList = dutyScheduleTable.get(slot);
@@ -317,6 +345,28 @@ public class DoctorManager {
 
         doctorRecords.add(newDoctorID, newDoctor);
         DAO.saveToFile(doctorRecords, doctorFile);
+    }
+    
+    public static void resetDocAvailabilityForNewday(String weekday){
+        for(TimeSlotKey timeslotkey : TimeSlotKey.values()){
+            if(timeslotkey.getTimeslot().getDay().equalsIgnoreCase(weekday)){
+
+                ListInterface<Doctor> doctorList;
+                if(dutyScheduleTable.get(timeslotkey) == null){
+                    doctorList = null;
+                }else{
+                    doctorList = dutyScheduleTable.get(timeslotkey).deepCopy();
+                }
+                
+                availabilityTable.add(timeslotkey, doctorList);
+            }
+        }
+    }
+    
+    public static String getNextWeekdayFormatted(DayOfWeek dayOfWeek) {
+        LocalDate nextDay = LocalDate.now().with(TemporalAdjusters.next(dayOfWeek));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy");
+        return nextDay.format(formatter);
     }
     
 
@@ -387,25 +437,5 @@ public class DoctorManager {
         }
         return assignedToDuty;
     }
-
-
-
-    public ListInterface<Doctor> getDoctorsOnDuty(TimeSlotKey slot) {
-        return dutyScheduleTable.get(slot);
-    }
-
-    public ListInterface<Doctor> getAvailableDoctors(TimeSlotKey slot) {
-        return availabilityTable.get(slot);
-    }
-
-    public MapInterface<TimeSlotKey, ListInterface<Doctor>> getAvailabilityTable() {
-        return availabilityTable;
-    }
     
-    
-    
-    public static void main(String[] args) {
-        DoctorManager doctorManager = new DoctorManager();
-        doctorManager.runDoctorManager();
-    }
 }

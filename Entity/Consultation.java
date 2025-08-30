@@ -1,6 +1,8 @@
 package Entity;
 
-public class Consultation {
+import java.io.Serializable;
+
+public class Consultation implements Serializable {
     public enum Status {
         SCHEDULED,
         IN_PROGRESS,
@@ -13,26 +15,24 @@ public class Consultation {
     private Patient patient;
     private Doctor doctor;
     private String date;
-    private String time;
+    private TimeSlotKey timeslot;
     private String reason;
     private String diagnosis;
     private String prescription;
     private String notes;
 
-    public Consultation(String consultationID, Patient patient, Doctor doctor,
-                       String date, String time, String reason,
-                       String diagnosis, String prescription, String notes) {
-        this(consultationID, patient, doctor, date, time, reason, diagnosis, prescription, notes, Status.SCHEDULED);
+    public Consultation(String consultationID, Patient patient, Doctor doctor, String date, TimeSlotKey timeslot,
+            String reason, String diagnosis, String prescription, String notes) {
+        this(consultationID, patient, doctor, date, timeslot, reason, diagnosis, prescription, notes, Status.SCHEDULED);
     }
     
-    public Consultation(String consultationID, Patient patient, Doctor doctor,
-                       String date, String time, String reason,
-                       String diagnosis, String prescription, String notes, Status status) {
+    public Consultation(String consultationID, Patient patient, Doctor doctor, String date, TimeSlotKey timeslot,
+            String reason, String diagnosis, String prescription, String notes, Status status) {
         this.consultationID = consultationID;
         this.patient = patient;
         this.doctor = doctor;
+        this.timeslot = timeslot;
         this.date = date;
-        this.time = time;
         this.reason = reason;
         this.diagnosis = diagnosis;
         this.prescription = prescription;
@@ -53,8 +53,8 @@ public class Consultation {
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
 
-    public String getTime() { return time; }
-    public void setTime(String time) { this.time = time; }
+    public TimeSlotKey getTimeslot() {return timeslot;}
+    public void setTimeslot(TimeSlotKey timeslot) {this.timeslot = timeslot;}
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
@@ -80,6 +80,6 @@ public class Consultation {
     @Override
     public String toString() {
         return String.format("Consultation[ID: %s, Status: %s, Patient: %s, Doctor: %s, Date: %s, Time: %s]",
-                consultationID, status, patient.getName(), doctor.getName(), date, time);
+                consultationID, status, patient.getName(), doctor.getName(), getDate(), timeslot.getTimeslot().getHour());
     }
 }

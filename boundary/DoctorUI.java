@@ -6,6 +6,7 @@ import Entity.Doctor;
 import enums.TimeSlot;
 import control.DoctorManager;
 import Entity.TimeSlotKey;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
@@ -105,10 +106,10 @@ public class DoctorUI {
         int index;
         do{
             index = 1;
-            System.out.println("Select a time slot:");
+            System.out.println("Select a time:");
             for (TimeSlot slot : TimeSlot.values()) {
                 if (slot.getDay().equalsIgnoreCase(chosenDay)) {
-                    System.out.printf("%d. %s\n", index++, slot);
+                    System.out.printf("%d. %s:00\n", index++, slot.getHour());
                 }
             }
 
@@ -133,7 +134,9 @@ public class DoctorUI {
     }
 
     public void showDoctorsInTimeslot(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
-        System.out.println("\nDoctors for " + chosenTimeslot + "\n-----------------------------");
+        System.out.println("\nDoctors for " + 
+                DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(chosenTimeslot.getTimeslot().getDay().toUpperCase()))
+                + "\n-----------------------------");
         if(doctorList == null || doctorList.isEmpty()){
             System.out.println("No doctors within this timeslot.");
             return;
@@ -141,8 +144,16 @@ public class DoctorUI {
         doctorList.sort((a,b) -> a.compareTo(b));
         for (int i = 0; i < doctorList.size(); i++) {
             Doctor d = doctorList.get(i+1);
-            System.out.println("  - " + d.getName() + " (ID: " + d.getDoctorID() + ")");
+            System.out.println(i+1 + ". " + d.getName() + " (ID: " + d.getDoctorID() + ")");
         }
+    }
+    
+    public Doctor chooseDoctor(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
+        showDoctorsInTimeslot(doctorList, chosenTimeslot);
+        System.out.print("Choose a doctor: ");
+        int choice = scanner.nextInt();
+        
+        return doctorList.get(choice);
     }
     
     public String getWeekDayChoice(){
@@ -150,9 +161,11 @@ public class DoctorUI {
 
         int chosenDay;
         do {
-            System.out.println("Select a day:");
+            System.out.println("Select an upcoming weekday:");
             for (int i = 0; i < days.length; i++) {
-                System.out.printf("%d. %s\n", i + 1, days[i]);
+                System.out.printf("%d. %s  (%s)\n", i + 1, 
+                        DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(days[i].toUpperCase())),
+                        days[i]);
             }
 
             System.out.print("Enter choice: ");

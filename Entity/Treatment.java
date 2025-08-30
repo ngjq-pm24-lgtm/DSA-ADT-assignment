@@ -1,7 +1,9 @@
 
 package Entity;
 
-public class Treatment {
+import java.io.Serializable;
+
+public class Treatment implements Serializable {
 	private String treatmentID;
     private String patientID;
     private String doctorID;

@@ -1,7 +1,10 @@
 //JQ
 
 package Entity;
-public class DispenseOrder {
+
+import java.io.Serializable;
+
+public class DispenseOrder implements Serializable {
     private String patientID;
     private String medID;
     private int quantity;

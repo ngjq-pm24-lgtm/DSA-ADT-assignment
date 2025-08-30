@@ -1,9 +1,10 @@
 package Entity;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class Payment {
+public class Payment implements Serializable {
     private String paymentId;
     private String patientId;
     private String paymentMethod;

@@ -1,6 +1,8 @@
 package Entity;
 
-public class Appointment {
+import java.io.Serializable;
+
+public class Appointment implements Serializable {
     private String patientId;       // Patient ID
     private String consultationType;
     private String reason;

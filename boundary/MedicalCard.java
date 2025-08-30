@@ -12,9 +12,9 @@ import java.util.Scanner;
 
 public class MedicalCard {
 
-    private PatientManagement pm;  // reference to PatientManagement
+    private PatientUI pm;  // reference to PatientManagement
 
-    public MedicalCard(Patient patient, PatientManagement pm) {
+    public MedicalCard(Patient patient, PatientUI pm) {
         this.pm = pm;
         displayPatientCard(patient);
     }

@@ -91,11 +91,6 @@ public class MyList<T> implements ListInterface<T> {
     }
 
     @Override
-    public T remove(T item) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
     public void clear() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
@@ -114,9 +109,65 @@ public class MyList<T> implements ListInterface<T> {
     public boolean isFull() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+    
+    @Override
+    public T remove(T item) {
+        if (item == null || isEmpty()) {
+            return null;
+        }
+
+        for (int i = 0; i < size; i++) {
+            if (list[i].equals(item)) {
+                T removed = list[i];
+                for (int j = i; j < size - 1; j++) {
+                    list[j] = list[j + 1];
+                }
+                list[--size] = null;
+                return removed;
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public Iterator<T> getIterator() {
+        return new MyListIterator();
+    }
+    
+    @Override
+    public void debugPrintAll() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+
+    @Override
+    public void printDebugIdentity() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+    
+    @Override
+    public ListInterface<T> deepCopy() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+    
+    private class MyListIterator implements Iterator<T> {
+
+        private int currentIndex = 0;
+
+        @Override
+        public boolean hasNext() {
+            return currentIndex < size;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException();
+            }
+            return list[currentIndex++];
+        }
+    }
 }
+    
+    
+

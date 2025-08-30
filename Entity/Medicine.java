@@ -1,6 +1,9 @@
 //JQ
 package Entity;
-public class Medicine {
+
+import java.io.Serializable;
+
+public class Medicine implements Serializable {
     private String medID;
     private String name;
     private int stock;

@@ -290,5 +290,35 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
     public MapEntry<K, V>[] getTable() {
         return table;
     }
+    
+    public ListInterface<V> convertToList() {
+        ListInterface<V> list = new MyList<>();
+        for (MapEntry<K, V> entry : table) {
+            if (entry != null && !entry.isRemoved()) {
+                list.add(entry.getValue());
+            }
+        }
+        return list;
+    }
+
+    public void printDebugTable() {
+        System.out.println("=== DEBUG HASHMAP TABLE ===");
+        for (int i = 0; i < table.length; i++) {
+            MapEntry<K, V> entry = table[i];
+            if (entry == null) {
+                System.out.printf("[%d] EMPTY%n", i);
+            } else if (entry.isRemoved()) {
+                System.out.printf("[%d] REMOVED (key=%s, value=%s)%n", i, entry.getKey(), entry.getValue());
+            } else {
+                System.out.printf("[%d] KEY=%s, VALUE=%s%n", i, entry.getKey(), entry.getValue());
+            }
+        }
+        System.out.printf("Size = %d, Capacity = %d%n", size, table.length);
+        System.out.println("===========================");
+    }
+
+    public void debugPrintIdentity() {
+        System.out.println("HashMap identity: " + System.identityHashCode(this));
+    }
 
 }

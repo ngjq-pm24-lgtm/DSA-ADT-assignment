@@ -28,7 +28,7 @@ public class ConsultationDAO<K, V> extends GenericDAO<K, V> {
     public MapInterface<K, V> loadConsultations() {
         MapInterface<K, V> consultations = retrieveFromFile(CONSULTATION_FILE);
         // Create a new instance of the map implementation being used
-        return consultations != null ? consultations : (MapInterface<K, V>) new MyMap<>();
+        return consultations != null ? consultations : (MapInterface<K, V>) new HashMap<>();
     }
     
     /**

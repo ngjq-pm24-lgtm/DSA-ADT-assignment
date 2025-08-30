@@ -1,23 +1,40 @@
 package boundary;
 
+import ADT.ListInterface;
+import ADT.MyList;
 import control.ConsultationControl;
 import Entity.Consultation;
+import Entity.Doctor;
+import Entity.TimeSlotKey;
+import control.DoctorManager;
+import dao.GenericDAO;
+import exception.ValidationException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import java.util.Scanner;
 
-public class ConsultationBoundary {
-    private final ConsultationControl control;
-    private final Scanner scanner;
+public class ConsultationUI {
+    private DoctorUI doctorUI = new DoctorUI();
+    private DoctorManager doctorManager = new DoctorManager();
+    private ConsultationControl consultationControl;
+    private GenericDAO dao = new GenericDAO();
+    private Scanner scanner = new Scanner(System.in);
 
-    public ConsultationBoundary(ConsultationControl control) {
-        this.control = control;
-        this.scanner = new Scanner(System.in);
+    public ConsultationUI() {
+        try{
+            consultationControl = new ConsultationControl(null, null, null, new MyList(), DoctorManager.getDoctorRecords().convertToList());
+        }catch(Exception e){
+            System.err.println(e.getMessage());
+        }
     }
 
     public void menu() {
         int choice;
         do {
-            System.out.println("\n=== Consultation Management ===");
+            System.out.println("\n=== CONSULTATION MANAGEMENT MENU ===");
             System.out.println("1. Book New Consultation Appointment");
             System.out.println("2. View All Consultation Records");
             System.out.println("3. Add Follow-Up Appointment");
@@ -57,71 +74,101 @@ public class ConsultationBoundary {
         System.out.print("Enter Patient ID: ");
         String patientId = scanner.nextLine();
 
-        System.out.print("Enter Doctor ID: ");
-        String doctorId = scanner.nextLine();
-
-        System.out.print("Enter Appointment Date (YYYY-MM-DD): ");
-        String date = scanner.nextLine();
-
-        System.out.print("Enter Appointment Time (HH:MM): ");
-        String time = scanner.nextLine();
+        ListInterface<Doctor> availableDoctors;
+        Doctor chosenDoctor = null;
+        TimeSlotKey chosenTimeslot;
+        do{
+            chosenTimeslot = doctorUI.getTimeslotChoice();
+            availableDoctors = DoctorManager.getAvailabilityTable().get(chosenTimeslot);
+            if (availableDoctors == null || availableDoctors.isEmpty()) {
+                System.out.println("No doctors available for this slot, please choose another.");
+            }else{
+                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot);
+            }
+        }while(availableDoctors == null || availableDoctors.isEmpty());
 
         System.out.print("Enter Reason/Remarks: ");
         String reason = scanner.nextLine();
 
         // Create consultation object (requires Patient & Doctor objects fetched via control)
         try{
-            Consultation consultation = control.createConsultation(patientId, doctorId, date, time, reason);
-            control.addConsultation(consultation);
+            Consultation consultation = consultationControl.createConsultation(patientId, chosenDoctor, chosenTimeslot, reason);
+            consultationControl.addConsultation(consultation);
+            System.out.println(DoctorManager.getAvailabilityTable().get(chosenTimeslot).remove(chosenDoctor));
+            dao.saveToFile(DoctorManager.getAvailabilityTable(), DoctorManager.getAvailabilityTableFile());
+            System.out.println("Consultation appointment booked successfully.");
         }catch(Exception e){
             System.err.println("Error: " + e.getMessage());
         }
-        System.out.println("Consultation appointment booked successfully.");
     }
 
     public void viewAllConsultationRecords() {
         System.out.println("\n=== View All Consultation Records ===");
-        control.displayAllConsultationRecords();
+        consultationControl.displayAllConsultationRecords();
     }
 
     public void addFollowUpConsultation() {
         System.out.println("\n=== Add Follow-Up Appointment ===");
 
         // Display current consultations
-        control.displayAllConsultationRecords();
-        if (control.getConsultationCount() == 0) return;
+        consultationControl.displayAllConsultationRecords();
+        if (consultationControl.getConsultationCount() == 0) return;
 
         System.out.print("Enter the number of the consultation to follow-up: ");
         int index = getIntInput() - 1;
 
-        if (!control.isValidConsultationIndex(index)) {
+        Consultation baseConsultation;
+        if (!consultationControl.isValidConsultationIndex(index)) {
             System.out.println("Invalid index. No follow-up added.");
             return;
+        }else{
+            baseConsultation = consultationControl.getAllConsultations().get(index);
         }
 
-        System.out.print("Enter Follow-Up Appointment Date (YYYY-MM-DD): ");
-        String date = scanner.nextLine();
+        ListInterface<Doctor> availableDoctors;
+        Doctor chosenDoctor = null;
+        TimeSlotKey chosenTimeslot;
+        boolean repeat;
+        do {
+            repeat = false;
+            chosenTimeslot = doctorUI.getTimeslotChoice();
 
-        System.out.print("Enter Follow-Up Appointment Time (HH:MM): ");
-        String time = scanner.nextLine();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH);
+            LocalDate baseDate = LocalDate.parse(baseConsultation.getDate(), formatter);
+            LocalDate followUpDate = LocalDate.parse(
+                    DoctorManager.getNextWeekdayFormatted(
+                            DayOfWeek.valueOf(chosenTimeslot.getTimeslot().getDay().toUpperCase())), formatter);
 
+            availableDoctors = DoctorManager.getAvailabilityTable().get(chosenTimeslot);
+            if (availableDoctors == null || availableDoctors.isEmpty()) {
+                System.out.println("No doctors available for this slot, please choose another.");
+                repeat = true;
+            }else if(followUpDate.isBefore(baseDate)){
+                System.out.println("Follow-up consultation's date must not be earlier than base consultation.");
+                repeat = true;
+            }else {
+                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot);
+            }
+        } while (repeat);
+
+        
         System.out.print("Enter Follow-Up Reason/Remarks: ");
         String reason = scanner.nextLine();
 
-        Consultation base = control.getConsultationByIndex(index);
         Consultation followUp = new Consultation(
             "FU-" + System.currentTimeMillis(),      // Follow-up ID
-            base.getPatient(),
-            base.getDoctor(),
-            date,
-            time,
+            baseConsultation.getPatient(),
+            chosenDoctor,
+        DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(chosenTimeslot.getTimeslot().getDay().toUpperCase())),
+            chosenTimeslot,
             reason,
             "", "", // diagnosis, prescription
-            "Follow-up consultation based on consultation ID: " + base.getConsultationID()
+            "Follow-up consultation based on consultation ID: " + baseConsultation.getConsultationID()
         );
+        DoctorManager.getAvailabilityTable().get(chosenTimeslot).remove(chosenDoctor);
         
         try{
-            control.insertFollowUp(index + 1, followUp);
+            consultationControl.insertFollowUp(index + 1, followUp);
         }catch(Exception e){
             System.err.println("Error:" + e.getMessage());
         }
@@ -141,7 +188,7 @@ public class ConsultationBoundary {
 
     private void generateConsultationReport() {
         System.out.println("\n=== Generate Consultation Report ===");
-        if (control.getConsultationCount() == 0) {
+        if (consultationControl.getConsultationCount() == 0) {
             System.out.println("No consultation records found to generate report.");
             return;
         }
@@ -159,20 +206,20 @@ public class ConsultationBoundary {
         
         switch (choice) {
             case 1:
-                control.generateAllConsultationsReport();
+                consultationControl.generateAllConsultationsReport();
                 break;
             case 2:
                 System.out.print("\nEnter start date (YYYY-MM-DD): ");
                 String startDate = scanner.nextLine();
                 System.out.print("Enter end date (YYYY-MM-DD): ");
                 String endDate = scanner.nextLine();
-                control.generateConsultationsByDateRangeReport(startDate, endDate);
+                consultationControl.generateConsultationsByDateRangeReport(startDate, endDate);
                 break;
             case 3:
                 System.out.print("\nEnter Doctor ID: ");
                 String doctorId = scanner.nextLine();
                 try{
-                    control.generateConsultationsByDoctorReport(doctorId);
+                    consultationControl.generateConsultationsByDoctorReport(doctorId);
                 }catch(Exception e){
                     System.err.println("Error:" + e.getMessage());
                 }
@@ -184,7 +231,7 @@ public class ConsultationBoundary {
     
     private void cancelConsultation() {
         System.out.println("\n=== Cancel Consultation Appointment ===");
-        if (control.getConsultationCount() == 0) {
+        if (consultationControl.getConsultationCount() == 0) {
             System.out.println("No consultations found to cancel.");
             return;
         }
@@ -202,20 +249,23 @@ public class ConsultationBoundary {
         }
 
         int index = choice - 1;
-        if (control.isValidConsultationIndex(index)) {
+        if (consultationControl.isValidConsultationIndex(index)) {
             // Get the consultation object by index first
-            Consultation consultationToCancel = control.getConsultationByIndex(index);
+            Consultation consultationToCancel = consultationControl.getConsultationByIndex(index);
             if (consultationToCancel != null) {
                 // Use the ID to cancel via the control method
                 boolean success = false;
                 try{
-                    success = control.cancelConsultation(consultationToCancel.getConsultationID());
+                    success = consultationControl.cancelConsultation(consultationToCancel.getConsultationID());
                 }catch(Exception e){
                     System.err.println("Error:" + e.getMessage());
                 }
                 if (success) {
                     System.out.println("\nSuccessfully cancelled consultation for " +
-                        consultationToCancel.getPatient().getName() + " on " + consultationToCancel.getDate() + " at " + consultationToCancel.getTime());
+                        consultationToCancel.getPatient().getName() + " on " + consultationToCancel.getTimeslot().getTimeslot().getDay() + 
+                            " at " + consultationToCancel.getTimeslot().getTimeslot().getHour());
+                    DoctorManager.getAvailabilityTable().get(consultationToCancel.getTimeslot()).add(consultationToCancel.getDoctor());
+                    
                 } else {
                     System.out.println("Failed to cancel consultation. It may have already been completed or cancelled.");
                 }

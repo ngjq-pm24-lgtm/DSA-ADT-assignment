@@ -6,7 +6,7 @@ import ADT.HashMap;
 import Entity.Patient;
 import control.PatientControl;
 
-public class PatientManagement {
+public class PatientUI {
 
     private Scanner scanner = new Scanner(System.in);
 

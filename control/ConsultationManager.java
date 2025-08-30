@@ -4,7 +4,7 @@ import ADT.QueueInterface;
 import ADT.ListInterface;
 import ADT.MapInterface;
 import ADT.MyList;
-import ADT.MyMap;
+import ADT.HashMap;
 import ADT.MyQueue;
 import Entity.Consultation;
 import Entity.Patient;
@@ -12,7 +12,7 @@ import Entity.Doctor;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Comparator;
+
 
 public class ConsultationManager {
     // ADTs for managing consultations
@@ -35,7 +35,7 @@ public class ConsultationManager {
     public ConsultationManager(ListInterface<Patient> patientList, ListInterface<Doctor> doctorList) {
         this.consultationQueue = new MyQueue<>();
         this.pastConsultations = new MyList<>();
-        this.consultationMap = new MyMap<>();
+        this.consultationMap = new HashMap<>();
         this.patientList = patientList;
         this.doctorList = doctorList;
     }

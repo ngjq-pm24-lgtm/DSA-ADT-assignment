@@ -30,7 +30,7 @@ public class ConsultationControl {
             throws DataAccessException {
         this.consultationQueue = queue != null ? queue : new MyQueue<>();
         this.consultationList = list != null ? list : new MyList<>();
-        this.consultationMap = map != null ? map : new MyMap<>();
+        this.consultationMap = map != null ? map : new HashMap<>();
         this.patientList = patientList;
         this.doctorList = doctorList;
         this.consultationDAO = new ConsultationDAO<>();
@@ -40,21 +40,13 @@ public class ConsultationControl {
     }
 
     // Create consultation using full Patient and Doctor objects from the shared ADT
-    public Consultation createConsultation(String patientId, String doctorId,
-                                         String date, String time, String reason) 
+    public Consultation createConsultation(String patientId, Doctor doctor,
+                                         TimeSlotKey timeslot, String reason) 
             throws ValidationException, EntityNotFoundException, DataAccessException {
         try {
             // Input validation
             validateInput(patientId, "Patient ID");
-            validateInput(doctorId, "Doctor ID");
-            validateInput(date, "Date");
-            validateInput(time, "Time");
             validateInput(reason, "Reason");
-            
-            // Validate date and time formats and check if date is in the future
-            if (validateAndParseDate(date).isBefore(LocalDate.now())) {
-                throw new ValidationException("Date", "Cannot schedule consultation in the past");
-            }
             
             // Find entities
             Patient patient = findPatientById(patientId);
@@ -62,23 +54,17 @@ public class ConsultationControl {
                 throw new EntityNotFoundException("Patient", patientId);
             }
             
-            Doctor doctor = findDoctorById(doctorId);
-            if (doctor == null) {
-                throw new EntityNotFoundException("Doctor", doctorId);
-            }
-
             // Check for scheduling conflicts
-            if (isDoctorScheduled(doctor, date, time)) {
+            if (isDoctorScheduled(doctor, timeslot)) {
                 throw new ValidationException("Schedule", 
-                    String.format("Dr. %s is already scheduled for a consultation at %s %s", 
-                        doctor.getName(), date, time));
+                    String.format("Dr. %s is already scheduled for a consultation at %s", 
+                        doctor.getName(), timeslot.toString()));
             }
 
             String newId = consultationDAO.generateConsultationId();
-            Consultation consultation = new Consultation(newId, patient, doctor, date, time, reason,
+            Consultation consultation = new Consultation(newId, patient, doctor, DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(timeslot.getTimeslot().getDay().toUpperCase())), timeslot, reason,
                     "", "", ""); // diagnosis, prescription, notes default empty
             
-            addConsultation(consultation);
             LOGGER.info(String.format("Created new consultation with ID: %s", newId));
             return consultation;
             
@@ -120,20 +106,21 @@ public class ConsultationControl {
         }
 
         System.out.println("=== All Consultation Records ===");
-        System.out.println(String.format("%-8s %-10s %-15s %-15s %-12s %-8s %-20s", 
+        System.out.println(String.format("    %-15s %-15s %-15s %-30s %-30s %-15s %-30s", 
             "ID", "Status", "Patient", "Doctor", "Date", "Time", "Reason"));
-        System.out.println("-".repeat(90));
+        System.out.println("-".repeat(150));
         
         int scheduledCount = 0, completedCount = 0, cancelledCount = 0;
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
-            System.out.println(String.format("%-8s %-10s %-15s %-15s %-12s %-8s %-20s",
+            System.out.println(String.format("%2d) %-15s %-15s %-15s %-30s %-30s %-15.2f %-30s",
+                i+1,
                 c.getConsultationID().substring(0, 6) + "...",
                 c.getStatus(),
                 c.getPatient().getName().substring(0, Math.min(12, c.getPatient().getName().length())),
-                c.getDoctor().getName().substring(0, Math.min(12, c.getDoctor().getName().length())),
+                c.getDoctor().getName(),
                 c.getDate(),
-                c.getTime(),
+                (float) c.getTimeslot().getTimeslot().getHour(),
                 c.getReason().substring(0, Math.min(17, c.getReason().length())) + 
                     (c.getReason().length() > 17 ? "..." : "")
             ));
@@ -201,6 +188,10 @@ public class ConsultationControl {
         return index >= 0 && index < consultationList.size();
     }
     
+    public ListInterface<Consultation> getAllConsultations(){
+        return consultationList;
+    }
+    
     /**
      * Retrieves a consultation by its index in the consultation list.
      * @param index The index of the consultation to retrieve
@@ -243,6 +234,8 @@ public class ConsultationControl {
         try {
             consultation.setStatus(Consultation.Status.CANCELLED);
             removeFromQueue(consultation);
+            consultationList.remove(consultation);
+            consultationMap.remove(consultationId);
             saveConsultations();
             LOGGER.info(String.format("Cancelled consultation with ID: %s", consultationId));
             return true;
@@ -352,12 +345,10 @@ public class ConsultationControl {
             
             if (loadedConsultations != null && !loadedConsultations.isEmpty()) {
                 // Clear existing data
-                consultationMap = new MyMap<>();
+                consultationMap = new HashMap<>();
                 consultationList = new MyList<>();
                 consultationQueue = new MyQueue<>();
                 
-                // This is a workaround since MapInterface doesn't support iteration
-                // In a real implementation, consider adding an iterator to MapInterface
                 for (int i = 0; i < loadedConsultations.size(); i++) {
                     Consultation c = loadedConsultations.get("" + i);
                     if (c != null) {
@@ -389,19 +380,21 @@ public class ConsultationControl {
      */
     public void generateAllConsultationsReport() {
         System.out.println("\n=== All Consultations Report ===");
-        System.out.println(String.format("%-8s %-15s %-15s %-12s %-8s %-20s", 
+        System.out.println(String.format("    %-15s %-15s %-30s %-30s %-15s %-30s", 
             "ID", "Patient", "Doctor", "Date", "Time", "Reason"));
-        System.out.println("-".repeat(80));
+        System.out.println("-".repeat(150));
         
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
-            System.out.println(String.format("%-8s %-15s %-15s %-12s %-8s %-20s",
-                c.getConsultationID().substring(0, 6) + "...",
-                c.getPatient().getName().substring(0, Math.min(12, c.getPatient().getName().length())),
-                c.getDoctor().getName().substring(0, Math.min(12, c.getDoctor().getName().length())),
+            System.out.println(String.format("%2d) %-15s %-15s %-30s %-30s %-15.2f %-30s",
+                    i + 1,
+                    c.getConsultationID().substring(0, 6) + "...",
+                c.getPatient().getName(),
+                    c.getDoctor().getName(),
                 c.getDate(),
-                c.getTime(),
-                c.getReason().substring(0, Math.min(17, c.getReason().length())) + (c.getReason().length() > 17 ? "..." : "")
+                    (float) c.getTimeslot().getTimeslot().getHour(),
+                    c.getReason().substring(0, Math.min(17, c.getReason().length()))
+                    + (c.getReason().length() > 17 ? "..." : "")
             ));
         }
         
@@ -410,26 +403,39 @@ public class ConsultationControl {
     
     /**
      * Generates a report of consultations within a date range
-     * @param startDate Start date in YYYY-MM-DD format
-     * @param endDate End date in YYYY-MM-DD format
      */
-    public void generateConsultationsByDateRangeReport(String startDate, String endDate) {
+    public void generateConsultationsByDateRangeReport(String startDay, String endDay) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter consultationFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy");
+        
+        // Convert inputs
+        LocalDate startDate = LocalDate.parse(startDay, inputFormatter);
+        LocalDate endDate = LocalDate.parse(endDay, inputFormatter);
+        
         System.out.println("\n=== Consultations Report " + startDate + " to " + endDate + " ===");
-        System.out.println(String.format("%-8s %-15s %-15s %-12s %-8s %-20s", 
-            "ID", "Patient", "Doctor", "Date", "Time", "Reason"));
-        System.out.println("-".repeat(80));
+        System.out.println(String.format("    %-15s %-15s %-30s %-30s %-15s %-30s",
+                "ID", "Patient", "Doctor", "Date", "Time", "Reason"));
+        System.out.println("-".repeat(150));
         
         int count = 0;
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
-            if (c.getDate().compareTo(startDate) >= 0 && c.getDate().compareTo(endDate) <= 0) {
-                System.out.println(String.format("%-8s %-15s %-15s %-12s %-8s %-20s",
-                    c.getConsultationID().substring(0, 6) + "...",
-                    c.getPatient().getName().substring(0, Math.min(12, c.getPatient().getName().length())),
-                    c.getDoctor().getName().substring(0, Math.min(12, c.getDoctor().getName().length())),
+
+            // Convert consultation date string -> LocalDate
+            LocalDate consultationDate = LocalDate.parse(c.getDate(), consultationFormatter);
+
+            if ((consultationDate.isEqual(startDate) || consultationDate.isAfter(startDate))
+                    && (consultationDate.isEqual(endDate) || consultationDate.isBefore(endDate))) {
+
+                System.out.println(String.format("%2d) %-15s %-15s %-30s %-30s %-15.2f %-30s",
+                        i + 1,
+                        c.getConsultationID().substring(0, 6) + "...",
+                    c.getPatient().getName(),
+                    c.getDoctor().getName(),
                     c.getDate(),
-                    c.getTime(),
-                    c.getReason().substring(0, Math.min(17, c.getReason().length())) + (c.getReason().length() > 17 ? "..." : "")
+                        (float) c.getTimeslot().getTimeslot().getHour(),
+                        c.getReason().substring(0, Math.min(17, c.getReason().length()))
+                        + (c.getReason().length() > 17 ? "..." : "")
                 ));
                 count++;
             }
@@ -450,27 +456,29 @@ public class ConsultationControl {
             return;
         }
         
-        System.out.println("\n=== Consultations Report for Dr. " + doctor.getName() + " ===");
-        System.out.println(String.format("%-8s %-15s %-12s %-8s %-20s", 
-            "ID", "Patient", "Date", "Time", "Reason"));
-        System.out.println("-".repeat(70));
+        System.out.println("\n=== Consultations Report for " + doctor.getName() + " ===");
+        System.out.println(String.format("    %-15s %-15s %-30s %-15s %-30s",
+                "ID", "Patient", "Date", "Time", "Reason"));
+        System.out.println("-".repeat(150));
         
         int count = 0;
         for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
             if (String.valueOf(c.getDoctor().getDoctorID()).equals(doctorId)) {
-                System.out.println(String.format("%-8s %-15s %-12s %-8s %-20s",
-                    c.getConsultationID().substring(0, 6) + "...",
-                    c.getPatient().getName().substring(0, Math.min(12, c.getPatient().getName().length())),
+                System.out.println(String.format("%2d) %-15s %-15s %-30s %-15.2f %-30s",
+                        i + 1,
+                        c.getConsultationID().substring(0, 6) + "...",
+                    c.getPatient().getName(),
                     c.getDate(),
-                    c.getTime(),
-                    c.getReason().substring(0, Math.min(17, c.getReason().length())) + (c.getReason().length() > 17 ? "..." : "")
+                        (float) c.getTimeslot().getTimeslot().getHour(),
+                        c.getReason().substring(0, Math.min(17, c.getReason().length()))
+                        + (c.getReason().length() > 17 ? "..." : "")
                 ));
                 count++;
             }
         }
         
-        System.out.println("\nTotal Consultations for Dr. " + doctor.getName() + ": " + count);
+        System.out.println("\nTotal Consultations for " + doctor.getName() + ": " + count);
     }
 
     public boolean insertFollowUp(int index, Consultation followUp) throws DataAccessException {
@@ -511,9 +519,9 @@ public class ConsultationControl {
     
     public void sortConsultationsByDate(boolean ascending) {
         consultationList.sort((c1, c2) -> {
-            int dateCompare = c1.getDate().compareTo(c2.getDate());
+            int dateCompare = c1.getTimeslot().compareTo(c2.getTimeslot());
             if (dateCompare == 0) {
-                return c1.getTime().compareTo(c2.getTime());
+                return Integer.compare(c1.getTimeslot().getTimeslot().getHour(), c2.getTimeslot().getTimeslot().getHour());
             }
             return ascending ? dateCompare : -dateCompare;
         });
@@ -567,6 +575,11 @@ public class ConsultationControl {
     // ====================
     
     private Patient findPatientById(String patientId) throws ValidationException, EntityNotFoundException {
+        patientList.add(new Patient("1001","abc","abc","abc",10,"abc","abc","abc","abc","abc","abc","abc","abc"));
+        //add 1 patient for testing system, since patient module not done yet so cant add patient to list
+        //remove this line later
+        
+        
         validateInput(patientId, "Patient ID");
         for (int i = 0; i < patientList.size(); i++) {
             Patient p = patientList.get(i);
@@ -588,19 +601,16 @@ public class ConsultationControl {
         throw new EntityNotFoundException("Doctor", doctorId);
     }
 
-    private boolean isDoctorScheduled(Doctor doctor, String date, String time) 
+    private boolean isDoctorScheduled(Doctor doctor, TimeSlotKey timeslot) 
             throws ValidationException {
         if (doctor == null) {
             throw new ValidationException("Doctor", "cannot be null");
         }
-        validateInput(date, "Date");
-        validateInput(time, "Time");
         
-        for (int i = 1; i <= consultationList.size(); i++) {
+        for (int i = 0; i < consultationList.size(); i++) {
             Consultation c = consultationList.get(i);
             if (c.getDoctor().equals(doctor) && 
-                c.getDate().equals(date) && 
-                c.getTime().equals(time) && 
+                c.getTimeslot().equals(timeslot) &&
                 c.isScheduled()) {
                 return true; // Found a conflicting scheduled consultation
             }
@@ -636,7 +646,7 @@ public class ConsultationControl {
             "Prescription: %s\n" +
             "Notes: %s",
             c.getConsultationID(),
-            c.getDate(), c.getTime(),
+            c.getDate(), (float) c.getTimeslot().getTimeslot().getHour(),
             c.getStatus(),
             c.getPatient().getName(),
             c.getPatient().getPatientId(),
@@ -695,7 +705,7 @@ public class ConsultationControl {
         // Sort by date (newest first) and time (latest first)
         history.sort((c1, c2) -> {
             int dateCompare = c2.getDate().compareTo(c1.getDate());
-            return dateCompare != 0 ? dateCompare : c2.getTime().compareTo(c1.getTime());
+            return dateCompare != 0 ? dateCompare : Integer.compare(c1.getTimeslot().getTimeslot().getHour(), c2.getTimeslot().getTimeslot().getHour());
         });
         
         return history;

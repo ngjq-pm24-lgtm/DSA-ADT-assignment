@@ -19,6 +19,9 @@ public interface MapInterface<K, V> {
     MapEntry<K, V>[] getTable();
     K findLargestKey();
     boolean isEmpty();
+    ListInterface<V> convertToList();
     MapEntry<K, V>[] sort(Comparator<K> comparator);
+    void debugPrintIdentity();
+    void printDebugTable();
 
 }

@@ -255,6 +255,41 @@ public class LinkedList<T> implements ListInterface<T>, Serializable {
         return outputStr;
     }
   
+    public void debugPrintAll() {
+        if (isEmpty()) {
+            System.out.println("List is empty.");
+            return;
+        }
+
+        Node currentNode = firstNode;
+        int index = 1;
+        while (currentNode != null) {
+            System.out.println("[" + index + "] " + currentNode.data);
+            currentNode = currentNode.next;
+            index++;
+        }
+    }
+
+    //return new linkedlist with same reference to inner objects as old linkedlist
+    public ListInterface<T> deepCopy() {
+        ListInterface<T> copy = new LinkedList<>();
+
+        if (this.isEmpty()) {
+            return copy;
+        }
+
+        Node currentNode = this.firstNode;
+        while (currentNode != null) {
+            copy.add(currentNode.data);
+            currentNode = currentNode.next;
+        }
+
+        return copy;
+    }
+
+    public void printDebugIdentity() {
+        System.out.println("LinkedList identity: " + System.identityHashCode(this));
+    }
   
     @Override
     public Iterator<T> getIterator() {

@@ -1,10 +1,10 @@
 package control;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.LinkedList;////need to change, cannot use java built in adt
+import java.util.Queue; ///same here
 import java.util.Scanner;
 import Entity.Patient;
-import boundary.PatientManagement;
+import boundary.PatientUI;
 import ADT.MapInterface;
 import ADT.HashMap;
 import ADT.MapEntry;
@@ -17,21 +17,19 @@ import java.time.format.DateTimeParseException;
 
 
 
-
-
 public class PatientControl {
-    private MapInterface<String, Payment> paymentMap = new HashMap<>();
+    private static MapInterface<String, Payment> paymentMap = new HashMap<>();
     private Scanner scanner = new Scanner(System.in);
     private int paymentCounter = 1;
-    private MapInterface<String, Appointment> appointmentMap = new HashMap<>();
-    private MapInterface<String, Patient> patientMap;
-    private PatientManagement patientUI;
-    private Queue<String> patientQueue; // store Patient IDs in queue
+    private static MapInterface<String, Appointment> appointmentMap = new HashMap<>();
+    private static MapInterface<String, Patient> patientMap;
+    private PatientUI patientUI;
+    private static Queue<String> patientQueue; // store Patient IDs in queue
     
     
     
      // Existing constructor
-    public PatientControl(PatientManagement patientUI) {
+    public PatientControl(PatientUI patientUI) {
         this.patientUI = patientUI;   
         this.patientMap = new HashMap<>();
         this.patientQueue = new LinkedList<>();
@@ -40,46 +38,43 @@ public class PatientControl {
 
     private static final HashMap<String, String> COURSE_MAP = new HashMap<>();
     static {
-        COURSE_MAP.put("ACCOUNTING", "ACC");
-        COURSE_MAP.put("FINANCE", "FIN");
-        COURSE_MAP.put("BUSINESS", "COM");
-        COURSE_MAP.put("ACCOUNTINGFINANCE", "AFN");
-        COURSE_MAP.put("MARKETING", "MKT");
-        COURSE_MAP.put("MANAGEMENT", "MGT");
-        COURSE_MAP.put("HUMANRESOURCEMANAGEMENT", "HRM");
-        COURSE_MAP.put("ISLAMICBANKINGFINANCE", "IBF");
-        COURSE_MAP.put("MANAGEMENTMATHEMATICSCOMPUTING", "RMM");
-        COURSE_MAP.put("INTERACTIVESOFTWARETECHNOLOGY", "RST");
-        COURSE_MAP.put("ENTERPRISEINFORMATIONSYSTEMS", "REI");
-        COURSE_MAP.put("INFORMATIONSECURITY", "RIS");
-        COURSE_MAP.put("SOFTWARESYSTEMSDEVELOPMENT", "RSD");
-        COURSE_MAP.put("ELECTRICALELECTRONICENGINEERING", "EEE");
-        COURSE_MAP.put("TELECOMMUNICATIONSENGINEERING", "TEL");
-        COURSE_MAP.put("MANUFACTURINGINDUSTRIALTECHNOLOGY", "MIT");
-        COURSE_MAP.put("MATERIALSMANUFACTURINGTECHNOLOGY", "MTM");
-        COURSE_MAP.put("CONSTRUCTIONMANAGEMENTECONOMICS", "CEM");
-        COURSE_MAP.put("ARCHITECTURE", "ARC");
-        COURSE_MAP.put("REALESTATEMANAGEMENT", "REM");
-        COURSE_MAP.put("QUANTITYSURVEYING", "QSB");
-        COURSE_MAP.put("INTERIORARCHITECTURE", "IAE");
-        COURSE_MAP.put("MEDIAMANAGEMENT", "MMC");
-        COURSE_MAP.put("ADVERTISINGMARKETING", "AMC");
-        COURSE_MAP.put("GRAPHICDESIGN", "GDS");
-        COURSE_MAP.put("INTERIORDESIGN", "IDS");
-        COURSE_MAP.put("EVENTMANAGEMENT", "EMM");
-        COURSE_MAP.put("PSYCHOLOGY", "PSY");
-        COURSE_MAP.put("SOCIOLOGYSOCIALDEVELOPMENT", "SDS");
-        COURSE_MAP.put("INTERNATIONALSTUDIES", "ISD");
-        COURSE_MAP.put("BIOTECHNOLOGY", "BTH");
-        COURSE_MAP.put("APPLIEDCHEMISTRY", "ACS");
-        COURSE_MAP.put("ENVIRONMENTALSCIENCE", "ENV");
-        COURSE_MAP.put("FOODSCIENCE", "FDS");
-        COURSE_MAP.put("MARINESCIENCE", "MSC");
+        COURSE_MAP.add("ACCOUNTING", "ACC");
+        COURSE_MAP.add("FINANCE", "FIN");
+        COURSE_MAP.add("BUSINESS", "COM");
+        COURSE_MAP.add("ACCOUNTINGFINANCE", "AFN");
+        COURSE_MAP.add("MARKETING", "MKT");
+        COURSE_MAP.add("MANAGEMENT", "MGT");
+        COURSE_MAP.add("HUMANRESOURCEMANAGEMENT", "HRM");
+        COURSE_MAP.add("ISLAMICBANKINGFINANCE", "IBF");
+        COURSE_MAP.add("MANAGEMENTMATHEMATICSCOMPUTING", "RMM");
+        COURSE_MAP.add("INTERACTIVESOFTWARETECHNOLOGY", "RST");
+        COURSE_MAP.add("ENTERPRISEINFORMATIONSYSTEMS", "REI");
+        COURSE_MAP.add("INFORMATIONSECURITY", "RIS");
+        COURSE_MAP.add("SOFTWARESYSTEMSDEVELOPMENT", "RSD");
+        COURSE_MAP.add("ELECTRICALELECTRONICENGINEERING", "EEE");
+        COURSE_MAP.add("TELECOMMUNICATIONSENGINEERING", "TEL");
+        COURSE_MAP.add("MANUFACTURINGINDUSTRIALTECHNOLOGY", "MIT");
+        COURSE_MAP.add("MATERIALSMANUFACTURINGTECHNOLOGY", "MTM");
+        COURSE_MAP.add("CONSTRUCTIONMANAGEMENTECONOMICS", "CEM");
+        COURSE_MAP.add("ARCHITECTURE", "ARC");
+        COURSE_MAP.add("REALESTATEMANAGEMENT", "REM");
+        COURSE_MAP.add("QUANTITYSURVEYING", "QSB");
+        COURSE_MAP.add("INTERIORARCHITECTURE", "IAE");
+        COURSE_MAP.add("MEDIAMANAGEMENT", "MMC");
+        COURSE_MAP.add("ADVERTISINGMARKETING", "AMC");
+        COURSE_MAP.add("GRAPHICDESIGN", "GDS");
+        COURSE_MAP.add("INTERIORDESIGN", "IDS");
+        COURSE_MAP.add("EVENTMANAGEMENT", "EMM");
+        COURSE_MAP.add("PSYCHOLOGY", "PSY");
+        COURSE_MAP.add("SOCIOLOGYSOCIALDEVELOPMENT", "SDS");
+        COURSE_MAP.add("INTERNATIONALSTUDIES", "ISD");
+        COURSE_MAP.add("BIOTECHNOLOGY", "BTH");
+        COURSE_MAP.add("APPLIEDCHEMISTRY", "ACS");
+        COURSE_MAP.add("ENVIRONMENTALSCIENCE", "ENV");
+        COURSE_MAP.add("FOODSCIENCE", "FDS");
+        COURSE_MAP.add("MARINESCIENCE", "MSC");
     }
     
-    
-
-
     // ------------------ Register New Patient ------------------ //
 public void registerNewPatient() {
     System.out.println("\n--- Register New Patient ---");
@@ -107,7 +102,7 @@ public void registerNewPatient() {
 
     // Store in patient map
     Scanner scanner = new Scanner(System.in);
-    patientMap.put(id, patient);
+    patientMap.add(id, patient);
     System.out.print("\nPatient registered successfully. Patient ID: " + id + "\n");
 
     // Ask user if they want to generate ID card
@@ -118,7 +113,7 @@ public void registerNewPatient() {
         choice = sc.nextLine().trim().toUpperCase();
      if (choice.equals("Y")) {
       // Open the MedicalCard JFrame with patient info
-        PatientManagement pm = new PatientManagement();
+        PatientUI pm = new PatientUI();
         MedicalCard cardUI = new MedicalCard(patient, pm);
 
           break;
@@ -285,7 +280,7 @@ private String inputValidBloodType() {
             if (attempts >= 5) {
                 System.out.println("Too many invalid attempts. Returning to Patient Management Menu...");
                 // Redirect back to the menu
-                PatientManagement menu = new PatientManagement();
+                PatientUI menu = new PatientUI();
                 menu.getPatientManagementMenu();
                 return null; // return null to stop further execution
             }
@@ -333,7 +328,7 @@ private String inputValidDateOfBirth(int expectedAge) {
         //  Exceeded 5 attempts
         if (attempts >= 5) {
             System.out.println("\n️ Too many invalid attempts. Returning to Patient Management Menu...");
-            PatientManagement pm = new PatientManagement();
+            PatientUI pm = new PatientUI();
             pm.getPatientManagementMenu();  // auto back to menu
             return null; // return null since DOB was not valid
         }
@@ -381,7 +376,7 @@ private String inputValidEmergencyNo(String contactNo) {
         if (attempts >= 5) {
             System.out.println("\nToo many invalid attempts. Returning to Patient Management Menu...");
             // Call back to menu
-            PatientManagement pm = new PatientManagement();
+            PatientUI pm = new PatientUI();
             pm.getPatientManagementMenu();
             return null; // Exit method, no valid emergency number
         }
@@ -478,7 +473,7 @@ private String inputValidAddress( ) {
             }
         }
 
-        if (!found && COURSE_MAP.containsKey(input)) {
+        if (!found && COURSE_MAP.contains(input)) {
             courseCode = COURSE_MAP.get(input);
         }
 
@@ -613,7 +608,7 @@ private String inputValidAddress( ) {
 
 
     public boolean deletePatient(String id) {
-        if (patientMap.containsKey(id)) {
+        if (patientMap.contains(id)) {
             patientMap.remove(id);
             System.out.println("Patient deleted successfully.");
             return true;
@@ -636,7 +631,7 @@ private String inputValidAddress( ) {
     }
 
     // Optional: check if patient exists in patientMap
-    if (!patientMap.containsKey(id)) {
+    if (!patientMap.contains(id)) {
         System.out.println("No patient found with this ID.");
         return;
     }
@@ -694,7 +689,7 @@ public void handleAppointmentMenu() {
 
                 // Save appointment
                 Appointment appointment = new Appointment(patientIdOrName, consultationType, reason, date, time);
-                appointmentMap.put(patientIdOrName, appointment);
+                appointmentMap.add(patientIdOrName, appointment);
 
                 System.out.println("\n Appointment Scheduled Successfully:");
                 System.out.println(appointment);
@@ -738,7 +733,7 @@ public void handleAppointmentMenu() {
             case 4: // Cancel appointment
                 System.out.print("Enter Patient ID to cancel appointment: ");
                 String cancelId = new Scanner(System.in).nextLine().trim();
-                if (appointmentMap.containsKey(cancelId)) {
+                if (appointmentMap.contains(cancelId)) {
                     appointmentMap.remove(cancelId);
                     System.out.println("Appointment for Patient " + cancelId + " has been canceled.");
                 } else {
@@ -974,7 +969,7 @@ private void generateReceipt() {
     // Validate patient ID
     System.out.print("Enter Patient ID: ");
     patientId = sc.nextLine().trim().toUpperCase();
-    if (!patientMap.containsKey(patientId)) {
+    if (!patientMap.contains(patientId)) {
         System.out.println("Patient not found. Please enter a valid Patient ID.");
         return;
     }
@@ -1003,7 +998,7 @@ private void generateReceipt() {
 
     //  Date & time auto-generated in Payment
     Payment payment = new Payment(paymentId, patientId, method, fee);
-    paymentMap.put(paymentId, payment);
+    paymentMap.add(paymentId, payment);
 
     System.out.println("\n--- Payment Receipt ---");
     System.out.println(payment);
@@ -1034,7 +1029,7 @@ private void viewPaymentHistory() {
 private void cancelPayment() {
     System.out.print("Enter Payment ID to remove: ");
     String paymentId = new java.util.Scanner(System.in).nextLine().trim();
-    if (paymentMap.containsKey(paymentId)) {
+    if (paymentMap.contains(paymentId)) {
         paymentMap.remove(paymentId);
         System.out.println("Payment " + paymentId + " has been removed.");
     } else {
@@ -1049,7 +1044,7 @@ public String inputPatientId() {
         patientId = scanner.nextLine().trim().toUpperCase();
 
         // Validate ID exists in patientMap
-        if (patientMap.containsKey(patientId)) break;
+        if (patientMap.contains(patientId)) break;
         System.out.println("Patient not found. Please enter a valid Patient ID.");
     }
     return patientId;

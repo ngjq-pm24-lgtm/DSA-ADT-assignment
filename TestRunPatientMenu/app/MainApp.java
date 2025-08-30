@@ -1,6 +1,6 @@
 package app;
 
-import boundary.PatientManagement;
+import boundary.PatientUI;
 import control.PatientControl;
 
 import java.util.Scanner;
@@ -9,7 +9,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        PatientManagement patientUI = new PatientManagement();
+        PatientUI patientUI = new PatientUI();
         PatientControl patientControl = new PatientControl(patientUI);
 
         boolean exit = false;

@@ -2,6 +2,7 @@ package dao;
 
 import ADT.*;
 import Entity.Doctor;
+import Entity.TimeSlotResetFlag;
 import java.io.*;
 
 
@@ -62,6 +63,37 @@ public class GenericDAO<K,V> {
             }
             return doctorRecords;
         } catch (IOException e) {
+            return null;
+        }
+    }
+    
+    public static boolean saveTimeSlotResetFlag(TimeSlotResetFlag flag) {
+        File file = new File("timeslotFlag.dat");
+        try {
+            ObjectOutputStream ooStream = new ObjectOutputStream(new FileOutputStream(file));
+            ooStream.writeObject(flag);
+            ooStream.close();
+            return true;
+        } catch (FileNotFoundException ex) {
+            return false;
+        } catch (IOException ex) {
+            return false;
+}
+    }
+
+    public static TimeSlotResetFlag getTimeSlotResetFlagFromFile() {
+        File file = new File("timeslotFlag.dat");
+        TimeSlotResetFlag flag;
+        try {
+            ObjectInputStream oiStream = new ObjectInputStream(new FileInputStream(file));
+            flag = (TimeSlotResetFlag) (oiStream.readObject());
+            oiStream.close();
+            return flag;
+        } catch (FileNotFoundException ex) {
+            return null;
+        } catch (IOException ex) {
+            return null;
+        } catch (ClassNotFoundException ex) {
             return null;
         }
     }
