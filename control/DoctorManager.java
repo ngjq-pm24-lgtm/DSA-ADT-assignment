@@ -4,7 +4,6 @@ import ADT.*;
 import Entity.*;
 import dao.GenericDAO;
 import boundary.DoctorUI;
-import enums.TimeSlot;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -15,33 +14,32 @@ public class DoctorManager {
     private static MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
     private static MapInterface<TimeSlotKey, ListInterface<Doctor>> availabilityTable;
     private static MapInterface<Integer, Doctor> doctorRecords;
-    private GenericDAO DAO = new GenericDAO();
     private DoctorUI doctorUI = new DoctorUI();
-    private static String doctorFile = "doctors.dat";
-    private static String doctorTextFile = "doctors.txt";
-    private static String dutyScheduleFile = "dutyScheduleTable.dat";
-    private static String availabilityTableFile = "availabilityTable.dat";
+    private static String doctorFile = "data/doctors.dat";
+    private static String doctorTextFile = "data/doctors.txt";
+    private static String dutyScheduleFile = "data/dutyScheduleTable.dat";
+    private static String availabilityTableFile = "data/availabilityTable.dat";
 
     public DoctorManager() {
-        doctorRecords = DAO.retrieveFromFile(doctorFile);
+        doctorRecords = GenericDAO.retrieveFromFile(doctorFile);
         if(doctorRecords == null){
-            doctorRecords = DAO.loadDoctorsFromTextFile(doctorTextFile);
+            doctorRecords = GenericDAO.loadDoctorsFromTextFile(doctorTextFile);
             if(doctorRecords != null)
-                DAO.saveToFile(doctorRecords, doctorFile);
+                GenericDAO.saveToFile(doctorRecords, doctorFile);
             else
                 System.out.println("Cannot initialize doctor records from text file.");
         }
         
-        dutyScheduleTable = DAO.retrieveFromFile(dutyScheduleFile);
+        dutyScheduleTable = GenericDAO.retrieveFromFile(dutyScheduleFile);
         if(dutyScheduleTable == null){
             dutyScheduleTable = new HashMap<>(42);
-            DAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
+            GenericDAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
         }
         
-        availabilityTable = DAO.retrieveFromFile(availabilityTableFile);
+        availabilityTable = GenericDAO.retrieveFromFile(availabilityTableFile);
         if(availabilityTable == null){
             availabilityTable = new HashMap<>(42);
-            DAO.saveToFile(availabilityTable, availabilityTableFile);
+            GenericDAO.saveToFile(availabilityTable, availabilityTableFile);
         }
     }
     
@@ -88,7 +86,7 @@ public class DoctorManager {
                 Doctor removedDoctor = doctorRecords.remove(doctorID);
                 if(removedDoctor != null){
                     System.out.println(removedDoctor.getName() + " removed.");
-                    DAO.saveToFile(doctorRecords, doctorFile);
+                    GenericDAO.saveToFile(doctorRecords, doctorFile);
                 }
                 else
                     System.out.println("This doctor record does not exist.");
@@ -314,8 +312,8 @@ public class DoctorManager {
                 availabilityTable.add(slot, availableList);
             }
 
-            DAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
-            DAO.saveToFile(availabilityTable, availabilityTableFile);
+            GenericDAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
+            GenericDAO.saveToFile(availabilityTable, availabilityTableFile);
             return true;
         } else {
             return false;
@@ -330,8 +328,8 @@ public class DoctorManager {
                                                              //means doctor have booking for that timeslot
         doctorsOnDuty.remove(doctorToRemove);
         availableDoctors.remove(doctorToRemove);         
-        DAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
-        DAO.saveToFile(availabilityTable, availabilityTableFile);
+        GenericDAO.saveToFile(dutyScheduleTable, dutyScheduleFile);
+        GenericDAO.saveToFile(availabilityTable, availabilityTableFile);
         return true;
     }
 
@@ -344,7 +342,7 @@ public class DoctorManager {
         Doctor newDoctor = new Doctor(newDoctorID, name, phone);
 
         doctorRecords.add(newDoctorID, newDoctor);
-        DAO.saveToFile(doctorRecords, doctorFile);
+        GenericDAO.saveToFile(doctorRecords, doctorFile);
     }
     
     public static void resetDocAvailabilityForNewday(String weekday){

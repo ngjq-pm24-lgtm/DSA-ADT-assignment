@@ -1,18 +1,15 @@
 package control;
 
-import java.util.LinkedList;////need to change, cannot use java built in adt
-import java.util.Queue; ///same here
 import java.util.Scanner;
 import Entity.Patient;
 import boundary.PatientUI;
-import ADT.MapInterface;
-import ADT.HashMap;
-import ADT.MapEntry;
+import ADT.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import Entity.Appointment;
 import Entity.Payment;
 import boundary.MedicalCard;
+import dao.GenericDAO;
 import java.time.format.DateTimeParseException;
 
 
@@ -24,16 +21,28 @@ public class PatientControl {
     private static MapInterface<String, Appointment> appointmentMap = new HashMap<>();
     private static MapInterface<String, Patient> patientMap;
     private PatientUI patientUI;
-    private static Queue<String> patientQueue; // store Patient IDs in queue
-    
+    private static QueueInterface<Patient> patientQueue; // store Patients in queue
+    private static String patientHashMapFile = "data/patientHashMap.dat";
+    private static String patientQueueFile = "data/patientQueue.dat";
+    private static String patientTextFile = "data/patients.txt";
     
     
      // Existing constructor
     public PatientControl(PatientUI patientUI) {
-        this.patientUI = patientUI;   
-        this.patientMap = new HashMap<>();
-        this.patientQueue = new LinkedList<>();
+        this.patientUI = patientUI;
 
+        patientMap = GenericDAO.retrieveFromFile(patientHashMapFile);
+        patientQueue = GenericDAO.retrieveFromFile(patientQueueFile);
+        if (patientMap == null || patientQueue == null) {
+            patientMap = new HashMap<>(30);
+            patientQueue = new ArrayQueue<>(30);
+            if (GenericDAO.loadPatientsFromTextFile(patientTextFile, patientMap, patientQueue)){
+                GenericDAO.saveToFile(patientMap, patientHashMapFile);
+                GenericDAO.saveToFile(patientQueue, patientQueueFile);
+            } else {
+                System.out.println("Cannot initialize patient records from text file.");
+            }
+        }
    }   
 
     private static final HashMap<String, String> COURSE_MAP = new HashMap<>();
@@ -74,6 +83,7 @@ public class PatientControl {
         COURSE_MAP.add("FOODSCIENCE", "FDS");
         COURSE_MAP.add("MARINESCIENCE", "MSC");
     }
+    
     
     // ------------------ Register New Patient ------------------ //
 public void registerNewPatient() {
@@ -630,13 +640,14 @@ private String inputValidAddress( ) {
         return;
     }
 
+    Patient patient = patientMap.get(id);
     // Optional: check if patient exists in patientMap
-    if (!patientMap.contains(id)) {
+    if (patient == null) {
         System.out.println("No patient found with this ID.");
         return;
     }
 
-    patientQueue.add(id);
+    patientQueue.enqueue(patient);
     System.out.println("Patient " + id + " added to queue.");
 }
 
@@ -651,10 +662,9 @@ public void viewQueueEntries() {
     System.out.printf("%-5s %-15s\n", "No", "Patient ID");
     System.out.println("==============================");
 
-    int i = 1;
-    for (String id : patientQueue) {
-        System.out.printf("%-5d %-15s\n", i, id);
-        i++;
+    int index = 1;
+    for (int i=0; i<patientQueue.size(); i++) {
+        System.out.printf("%-5d %-15s\n", index++, patientQueue.get(i).getPatientId());
     }
 }
 
@@ -664,13 +674,31 @@ public void deleteQueueEntry() {
         System.out.println("The queue is empty. Nothing to delete.");
         return;
     }
-    System.out.print("Enter Patient ID to remove from queue: ");
-    String id = new Scanner(System.in).nextLine().trim();
-    if (patientQueue.remove(id)) {
-        System.out.println("Patient " + id + " removed from queue.");
-    } else {
-        System.out.println("Patient ID not found in queue.");
-    }
+    
+    boolean invalid;
+    do{
+        invalid = false;
+        viewQueueEntries();
+        System.out.print("\nPatient at front of the queue: " + patientQueue.peek().getPatientId());
+
+        System.out.print("\nConfirm to remove this patient? (Y/N): ");
+        char choice = scanner.nextLine().charAt(0);
+
+        switch (choice) {
+            case 'Y':
+            case 'y':
+                Patient removedPatient = patientQueue.dequeue();
+                System.out.println("Patient " + removedPatient.getPatientId() + " removed from queue.");
+                break;
+            case 'N':
+            case 'n':
+                System.out.println("Removal cancelled.");
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+                invalid = true;
+        }
+    }while(invalid);
 }
 
 
@@ -691,7 +719,7 @@ public void handleAppointmentMenu() {
                 Appointment appointment = new Appointment(patientIdOrName, consultationType, reason, date, time);
                 appointmentMap.add(patientIdOrName, appointment);
 
-                System.out.println("\n Appointment Scheduled Successfully:");
+                System.out.println("\nAppointment Scheduled Successfully:");
                 System.out.println(appointment);
                 break;
                 
@@ -866,12 +894,6 @@ public static String inputDate() {
             }
         }
     }
-
-    public static void main(String[] args) {
-        String date = inputDate();
-        System.out.println("Valid future date entered: " + date);
-    }
-
 
 // Input time (HH:MM, 24-hour format, allowed 09:00–21:59)
 public String inputTime() {
