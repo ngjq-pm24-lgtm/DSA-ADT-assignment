@@ -349,8 +349,12 @@ public class ConsultationControl {
                 consultationList = new MyList<>();
                 consultationQueue = new MyQueue<>();
                 
-                for (int i = 0; i < loadedConsultations.size(); i++) {
-                    Consultation c = loadedConsultations.get("" + i);
+                Consultation c = null;
+                MapEntry<String,Consultation>[] loadedConsultationsArr = loadedConsultations.getTable();
+                for (int i = 0; i < loadedConsultationsArr.length; i++) {
+                    if(loadedConsultationsArr[i] != null)
+                        c = loadedConsultationsArr[i].getValue();
+                    
                     if (c != null) {
                         // Only load consultations for existing patients
                         if (validatePatientExists(c.getPatient().getPatientId())) {
@@ -371,6 +375,7 @@ public class ConsultationControl {
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error loading consultations", e);
+            e.printStackTrace();
             throw new DataAccessException("Failed to load consultations", e);
         }
     }
@@ -575,10 +580,6 @@ public class ConsultationControl {
     // ====================
     
     private Patient findPatientById(String patientId) throws ValidationException, EntityNotFoundException {
-        patientList.add(new Patient("1001","abc","abc","abc",10,"abc","abc","abc","abc","abc","abc","abc","abc"));
-        //add 1 patient for testing system, since patient module not done yet so cant add patient to list
-        //remove this line later
-        
         
         validateInput(patientId, "Patient ID");
         for (int i = 0; i < patientList.size(); i++) {
