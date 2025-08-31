@@ -1,3 +1,4 @@
+
 //koo jing yik
 package control;
 
@@ -12,7 +13,6 @@ import Entity.Payment;
 import boundary.MedicalCard;
 import dao.GenericDAO;
 import java.time.format.DateTimeParseException;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -974,5 +974,3 @@ private void cancelPayment() {
     }
 }
 }
-
-    

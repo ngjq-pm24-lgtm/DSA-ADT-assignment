@@ -1,4 +1,3 @@
-
 package boundary;
 
 import java.util.Scanner;
@@ -11,13 +10,16 @@ import java.time.format.DateTimeFormatter;
 import ADT.ArrayQueue;
 import ADT.QueueInterface;
 import control.PatientControl;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 
+
 public class PatientUI {
     private Scanner scanner = new Scanner(System.in);
+    private ArrayQueue<String> patientQueue;
 
 
 // ---------------- Patient Managemnt Menu ----------------
@@ -62,7 +64,7 @@ public int getPatientRecordMenu() {
         System.out.println("1. View patient record");
         System.out.println("2. Search patient record");
         System.out.println("3. Update patient record");
-        System.out.println("4. Delete patient record");
+        System.out.println("4. Remove patient record");
         System.out.println("0. Back to previous menu");
         System.out.print("Enter choice: ");
 
@@ -124,7 +126,6 @@ public int getPatientUpdateMenu() {
 
     return choice;
 }
-
 
 
 // ---------------- Walk in PAtient Queue Entry Menu ----------------
@@ -610,9 +611,11 @@ public String generatePaymentHistoryReport(MapInterface<String, Payment> payment
     } while (method < 1 || method > 3);
     return method;
 }
+
  
     // ------------------ Generic Messages ------------------ //
 public void displayMessage(String msg) {
     System.out.println(msg);
 } 
 }
+
