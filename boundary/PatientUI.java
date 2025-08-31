@@ -306,7 +306,7 @@ public String generatePaymentHistoryReport(MapInterface<String, Payment> payment
 
     // ---------------- Table Header ----------------
     sb.append(String.format("%-12s | %-10s | %-15s | %-10s\n",
-            "Patient ID", "Payment ID", "Payment Method", "Payment Amount"));
+            "Payment ID", "Patient ID", "Payment Method", "Payment Amount"));
     sb.append(dashes).append("\n");
 
     // ---------------- Table Rows ----------------
@@ -317,8 +317,8 @@ public String generatePaymentHistoryReport(MapInterface<String, Payment> payment
             Patient patient = patientMap.get(payment.getPatientId());
             if (patient != null) {
                 sb.append(String.format("%-12s | %-10s | %-15s | %-10.2f\n",
-                        patient.getPatientId(),
                         payment.getPaymentId(),
+                        patient.getPatientId(),
                         payment.getPaymentMethod(),
                         payment.getAmount()));
             }
@@ -618,5 +618,6 @@ public void displayMessage(String msg) {
     System.out.println(msg);
 } 
 }
+
 
 
