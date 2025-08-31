@@ -186,7 +186,7 @@ public void registerNewPatient() {
     Scanner sc = new Scanner(System.in);
     String choice;
     while (true) {
-        System.out.print("\nDo you want to generate the patient ID card? (Y/N): \n");
+        System.out.print("\nDo you want to generate the patient ID card? (Y/N): ");
         choice = sc.nextLine().trim().toUpperCase();
      if (choice.equals("Y")) {
       // Open the MedicalCard JFrame with patient info
