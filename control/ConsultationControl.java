@@ -30,7 +30,7 @@ public class ConsultationControl {
                              ListInterface<Consultation> list,
                              MapInterface<String, Consultation> map) 
             throws DataAccessException {
-        this.consultationQueue = queue != null ? queue : new MyQueue<>();
+        this.consultationQueue = queue != null ? queue : new ArrayQueue<>(30);
         this.consultationList = list != null ? list : new MyList<>();
         this.consultationMap = map != null ? map : new HashMap<>();
         
@@ -250,7 +250,7 @@ public class ConsultationControl {
         }
         
         // Create a temporary queue to hold consultations
-        QueueInterface<Consultation> tempQueue = new MyQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>(30);
         
         // Dequeue consultations until we find the one to remove
         while (!consultationQueue.isEmpty()) {
@@ -348,7 +348,7 @@ public class ConsultationControl {
                 // Clear existing data
                 consultationMap = new HashMap<>();
                 consultationList = new MyList<>();
-                consultationQueue = new MyQueue<>();
+                consultationQueue = new ArrayQueue<>(30);
                 
                 Consultation c = null;
                 MapEntry<String,Consultation>[] loadedConsultationsArr = loadedConsultations.getTable();

@@ -33,7 +33,7 @@ public class ConsultationManager {
      * @param doctorList List of all doctors
      */
     public ConsultationManager(ListInterface<Patient> patientList, ListInterface<Doctor> doctorList) {
-        this.consultationQueue = new ArrayQueue<>();
+        this.consultationQueue = new ArrayQueue<>(30);
         this.pastConsultations = new MyList<>();
         this.consultationMap = new HashMap<>();
         this.patientList = patientList;
@@ -216,7 +216,7 @@ public class ConsultationManager {
      * @return true if removed, false if not found
      */
     private boolean removeFromQueue(String consultationId) {
-        QueueInterface<Consultation> tempQueue = new ArrayQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>(30);
         boolean found = false;
         
         // Look for the consultation in the queue
@@ -243,7 +243,7 @@ public class ConsultationManager {
      * @return true if found in queue, false otherwise
      */
     private boolean isInQueue(String consultationId) {
-        QueueInterface<Consultation> tempQueue = new ArrayQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>(30);
         boolean found = false;
         
         // Check each consultation in the queue
