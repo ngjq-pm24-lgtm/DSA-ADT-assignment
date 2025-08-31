@@ -18,9 +18,7 @@ public interface ListInterface<T> {
    boolean isEmpty();
    boolean isFull();
    void sort(Comparator<T> comparator);
-    void debugPrintAll();
-    void printDebugIdentity();
-    ListInterface<T> deepCopy();
+   ListInterface<T> deepCopy();
    Iterator<T> getIterator();
 }
 

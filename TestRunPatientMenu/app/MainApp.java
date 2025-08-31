@@ -1,7 +1,7 @@
 package app;
 
-import boundary.PatientUI;
-import control.PatientControl;
+import boundary.OldPatientUI;
+import control.OldPatientControl;
 
 import java.util.Scanner;
 
@@ -9,8 +9,8 @@ public class MainApp {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        PatientUI patientUI = new PatientUI();
-        PatientControl patientControl = new PatientControl(patientUI);
+        OldPatientUI patientUI = new OldPatientUI();
+        OldPatientControl patientControl = new OldPatientControl(patientUI);
 
         boolean exit = false;
 

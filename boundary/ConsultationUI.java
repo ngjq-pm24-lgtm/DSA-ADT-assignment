@@ -25,7 +25,7 @@ public class ConsultationUI {
 
     public ConsultationUI() {
         try{
-            consultationControl = new ConsultationControl(null, null, null, new MyList(), DoctorManager.getDoctorRecords().convertToList());
+            consultationControl = new ConsultationControl();
         }catch(Exception e){
             System.err.println(e.getMessage());
         }
@@ -94,8 +94,8 @@ public class ConsultationUI {
         try{
             Consultation consultation = consultationControl.createConsultation(patientId, chosenDoctor, chosenTimeslot, reason);
             consultationControl.addConsultation(consultation);
-            System.out.println(DoctorManager.getAvailabilityTable().get(chosenTimeslot).remove(chosenDoctor));
-            dao.saveToFile(DoctorManager.getAvailabilityTable(), DoctorManager.getAvailabilityTableFile());
+            DoctorManager.getAvailabilityTable().get(chosenTimeslot).remove(chosenDoctor);
+            GenericDAO.saveToFile(DoctorManager.getAvailabilityTable(), DoctorManager.getAvailabilityTableFile());
             System.out.println("Consultation appointment booked successfully.");
         }catch(Exception e){
             System.err.println("Error: " + e.getMessage());
@@ -145,6 +145,11 @@ public class ConsultationUI {
                 repeat = true;
             }else if(followUpDate.isBefore(baseDate)){
                 System.out.println("Follow-up consultation's date must not be earlier than base consultation.");
+                repeat = true;
+            }else if(followUpDate.isEqual(baseDate) && 
+                    Integer.compare(chosenTimeslot.getTimeslot().getHour(), 
+                            baseConsultation.getTimeslot().getTimeslot().getHour()) < 1 ){
+                System.out.println("Follow-up consultation's time must not be earlier than base consultation if both are on same day.");
                 repeat = true;
             }else {
                 chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot);
@@ -263,7 +268,7 @@ public class ConsultationUI {
                 if (success) {
                     System.out.println("\nSuccessfully cancelled consultation for " +
                         consultationToCancel.getPatient().getName() + " on " + consultationToCancel.getTimeslot().getTimeslot().getDay() + 
-                            " at " + consultationToCancel.getTimeslot().getTimeslot().getHour());
+                            " at " + consultationToCancel.getTimeslot().getTimeslot().getHour() + ":00.");
                     DoctorManager.getAvailabilityTable().get(consultationToCancel.getTimeslot()).add(consultationToCancel.getDoctor());
                     
                 } else {

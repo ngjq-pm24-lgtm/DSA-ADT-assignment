@@ -29,7 +29,6 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         size = 0;
     }
     
-
     @Override
     public K findLargestKey() {
         if (size == 0) return null;
@@ -53,7 +52,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         // Resize if load factor exceeded
         double loadFactor = (double) (size + 1) / table.length;
         if (loadFactor > MAX_LOAD_FACTOR) {
-            resizeBackingTable(table.length * 2 + 1);
+            resize(table.length * 2 + 1);
         }
         
         int rawHash = key.hashCode();
@@ -258,7 +257,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
     }
 
     @Override
-    public boolean resizeBackingTable(int length) {
+    public boolean resize(int length) {
         if (length <= size) {
             return false;
         }
@@ -291,7 +290,7 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         return table;
     }
     
-    public ListInterface<V> convertToList() {
+    public ListInterface<V> convertToMyList() {
         ListInterface<V> list = new MyList<>();
         for (MapEntry<K, V> entry : table) {
             if (entry != null && !entry.isRemoved()) {
@@ -301,24 +300,14 @@ public class HashMap<K, V> implements MapInterface<K, V>, Serializable {
         return list;
     }
 
-    public void printDebugTable() {
-        System.out.println("=== DEBUG HASHMAP TABLE ===");
-        for (int i = 0; i < table.length; i++) {
-            MapEntry<K, V> entry = table[i];
-            if (entry == null) {
-                System.out.printf("[%d] EMPTY%n", i);
-            } else if (entry.isRemoved()) {
-                System.out.printf("[%d] REMOVED (key=%s, value=%s)%n", i, entry.getKey(), entry.getValue());
-            } else {
-                System.out.printf("[%d] KEY=%s, VALUE=%s%n", i, entry.getKey(), entry.getValue());
+    public LinkedList<V> convertToLinkedList() {
+        LinkedList<V> list = new LinkedList<>();
+        for (MapEntry<K, V> entry : table) {
+            if (entry != null && !entry.isRemoved()) {
+                list.add(entry.getValue());
             }
         }
-        System.out.printf("Size = %d, Capacity = %d%n", size, table.length);
-        System.out.println("===========================");
-    }
-
-    public void debugPrintIdentity() {
-        System.out.println("HashMap identity: " + System.identityHashCode(this));
+        return list;
     }
 
 }

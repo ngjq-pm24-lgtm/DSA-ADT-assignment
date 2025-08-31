@@ -12,28 +12,27 @@ public class ConsultationControl {
     private static final Logger LOGGER = Logger.getLogger(ConsultationControl.class.getName());
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
     // Time format is now managed by Consultation entity
-    private QueueInterface<Consultation> consultationQueue;
-    private ListInterface<Consultation> consultationList;
-    private MapInterface<String, Consultation> consultationMap;
-    private final ListInterface<Patient> patientList;
-    private final ListInterface<Doctor> doctorList;
-    private final ConsultationDAO<String, Consultation> consultationDAO;
+    private static QueueInterface<Consultation> consultationQueue;
+    private static ListInterface<Consultation> consultationList;
+    private static MapInterface<String, Consultation> consultationMap;
+    private static final ListInterface<Patient> patientList = PatientControl.getPatientMap().convertToMyList();
+    private static final ListInterface<Doctor> doctorList = DoctorManager.getDoctorRecords().convertToMyList();
+    private static final ConsultationDAO<String, Consultation> consultationDAO = new ConsultationDAO();
     
     // File path for data persistence
     // Data file path is now managed by ConsultationDAO
+    
+    public ConsultationControl() throws DataAccessException{
+        this(null, null, null);
+    }
 
     public ConsultationControl(QueueInterface<Consultation> queue, 
                              ListInterface<Consultation> list,
-                             MapInterface<String, Consultation> map,
-                             ListInterface<Patient> patientList, 
-                             ListInterface<Doctor> doctorList) 
+                             MapInterface<String, Consultation> map) 
             throws DataAccessException {
         this.consultationQueue = queue != null ? queue : new MyQueue<>();
         this.consultationList = list != null ? list : new MyList<>();
         this.consultationMap = map != null ? map : new HashMap<>();
-        this.patientList = patientList;
-        this.doctorList = doctorList;
-        this.consultationDAO = new ConsultationDAO<>();
         
         // Load data on initialization
         loadConsultations();
@@ -293,9 +292,11 @@ public class ConsultationControl {
         if (patientId == null || patientId.trim().isEmpty()) {
             return false;
         }
-        for (int i = 1; i <= patientList.size(); i++) {
-            if (patientList.get(i).getPatientId().equals(patientId)) {
-                return true;
+        for (int i = 0; i < patientList.size(); i++) {
+            if(patientList.get(i) != null){
+                if (patientList.get(i).getPatientId().equals(patientId)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -352,30 +353,30 @@ public class ConsultationControl {
                 Consultation c = null;
                 MapEntry<String,Consultation>[] loadedConsultationsArr = loadedConsultations.getTable();
                 for (int i = 0; i < loadedConsultationsArr.length; i++) {
-                    if(loadedConsultationsArr[i] != null)
+                    c = null; // reset each iteration
+                    if (loadedConsultationsArr[i] != null) {
                         c = loadedConsultationsArr[i].getValue();
-                    
+                    }
+
                     if (c != null) {
-                        // Only load consultations for existing patients
                         if (validatePatientExists(c.getPatient().getPatientId())) {
                             consultationMap.add(c.getConsultationID(), c);
                             consultationList.add(c);
-                            
-                            // Add to queue if it's scheduled
+
                             if (c.getStatus() == Consultation.Status.SCHEDULED) {
                                 consultationQueue.enqueue(c);
                             }
                         } else {
-                            LOGGER.warning("Skipped loading consultation " + c.getConsultationID() + 
-                                        " - patient " + c.getPatient().getPatientId() + " not found");
+                            LOGGER.warning("Skipped loading consultation " + c.getConsultationID()
+                                    + " - patient " + c.getPatient().getPatientId() + " not found");
                         }
                     }
                 }
+
                 LOGGER.info(String.format("Loaded %d consultations from file", consultationMap.size()));
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error loading consultations", e);
-            e.printStackTrace();
             throw new DataAccessException("Failed to load consultations", e);
         }
     }
@@ -471,7 +472,7 @@ public class ConsultationControl {
             Consultation c = consultationList.get(i);
             if (String.valueOf(c.getDoctor().getDoctorID()).equals(doctorId)) {
                 System.out.println(String.format("%2d) %-15s %-15s %-30s %-15.2f %-30s",
-                        i + 1,
+                        count + 1,
                         c.getConsultationID().substring(0, 6) + "...",
                     c.getPatient().getName(),
                     c.getDate(),
@@ -482,6 +483,9 @@ public class ConsultationControl {
                 count++;
             }
         }
+        
+        if(count == 0)
+            System.out.println(" ".repeat(20) + "( No consultations have been booked )");
         
         System.out.println("\nTotal Consultations for " + doctor.getName() + ": " + count);
     }
@@ -584,8 +588,10 @@ public class ConsultationControl {
         validateInput(patientId, "Patient ID");
         for (int i = 0; i < patientList.size(); i++) {
             Patient p = patientList.get(i);
-            if (p.getPatientId().equals(patientId)) {
-                return p;
+            if(p != null){
+                if (p.getPatientId().equals(patientId)) {
+                    return p;
+                }
             }
         }
         throw new EntityNotFoundException("Patient", patientId);

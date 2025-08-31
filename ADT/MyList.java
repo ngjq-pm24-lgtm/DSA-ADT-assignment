@@ -92,23 +92,42 @@ public class MyList<T> implements ListInterface<T> {
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        for (int i = 0; i < size; i++) {
+            list[i] = null;
+        }
+        size = 0;
     }
+
 
     @Override
     public boolean replace(int givenPosition, T newEntry) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        if (givenPosition < 0 || givenPosition >= size || newEntry == null) {
+            return false;
+        }
+        list[givenPosition] = newEntry;
+        return true;
     }
+
 
     @Override
     public boolean contains(T anEntry) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        if (anEntry == null) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (list[i].equals(anEntry)) {
+                return true;
+            }
+        }
+        return false;
     }
+
 
     @Override
     public boolean isFull() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return size >= list.length; // true only before ensureCapacity() expands it
     }
+
     
     @Override
     public T remove(T item) {
@@ -136,19 +155,14 @@ public class MyList<T> implements ListInterface<T> {
     }
     
     @Override
-    public void debugPrintAll() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public ListInterface<T> deepCopy() {
+        MyList<T> copy = new MyList<>();
+        for (int i = 0; i < size; i++) {
+            copy.add(list[i]);
+        }
+        return copy;
     }
 
-    @Override
-    public void printDebugIdentity() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-    
-    @Override
-    public ListInterface<T> deepCopy() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
     
     private class MyListIterator implements Iterator<T> {
 

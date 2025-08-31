@@ -15,13 +15,12 @@ public interface MapInterface<K, V> {
     boolean contains(K key);
     void clear();
     int size();
-    boolean resizeBackingTable(int length);
+    boolean resize(int length);
     MapEntry<K, V>[] getTable();
     K findLargestKey();
     boolean isEmpty();
-    ListInterface<V> convertToList();
+    ListInterface<V> convertToMyList();
+    ListInterface<V> convertToLinkedList();
     MapEntry<K, V>[] sort(Comparator<K> comparator);
-    void debugPrintIdentity();
-    void printDebugTable();
 
 }

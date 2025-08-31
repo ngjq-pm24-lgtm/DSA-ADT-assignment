@@ -196,12 +196,10 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public boolean resizeBackingTable(int length) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        for (int i = 0; i < capacity; i++) {
+            table[i] = null;
+        }
+        size = 0;
     }
 
     @Override
@@ -220,17 +218,17 @@ public class MyMap<K, V> implements MapInterface<K, V>, java.io.Serializable {
     }
 
     @Override
-    public ListInterface<V> convertToList() {
+    public ListInterface<V> convertToMyList() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public void debugPrintIdentity() {
+    public ListInterface<V> convertToLinkedList() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public void printDebugTable() {
+    public boolean resize(int length) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 

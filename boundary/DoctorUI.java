@@ -149,9 +149,15 @@ public class DoctorUI {
     }
     
     public Doctor chooseDoctor(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
-        showDoctorsInTimeslot(doctorList, chosenTimeslot);
-        System.out.print("Choose a doctor: ");
-        int choice = scanner.nextInt();
+        int choice;
+        do{
+            showDoctorsInTimeslot(doctorList, chosenTimeslot);
+            System.out.print("Choose a doctor: ");
+            choice = scanner.nextInt();
+            
+            if(choice<1 || choice>doctorList.size())
+                System.out.printf("\nPlease enter a number between 1 to %d.\n", doctorList.size());
+        }while(choice<1 || choice>doctorList.size());
         
         return doctorList.get(choice);
     }
