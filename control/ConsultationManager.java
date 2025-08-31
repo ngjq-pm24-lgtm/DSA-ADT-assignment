@@ -5,7 +5,7 @@ import ADT.ListInterface;
 import ADT.MapInterface;
 import ADT.MyList;
 import ADT.HashMap;
-import ADT.MyQueue;
+import ADT.ArrayQueue;
 import Entity.Consultation;
 import Entity.Patient;
 import Entity.Doctor;
@@ -33,7 +33,7 @@ public class ConsultationManager {
      * @param doctorList List of all doctors
      */
     public ConsultationManager(ListInterface<Patient> patientList, ListInterface<Doctor> doctorList) {
-        this.consultationQueue = new MyQueue<>();
+        this.consultationQueue = new ArrayQueue<>();
         this.pastConsultations = new MyList<>();
         this.consultationMap = new HashMap<>();
         this.patientList = patientList;
@@ -64,7 +64,7 @@ public class ConsultationManager {
      */
     public ListInterface<Consultation> viewUpcomingConsultations() {
         // Create a copy of the queue to avoid modifying it
-        QueueInterface<Consultation> tempQueue = new MyQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>(30);
         ListInterface<Consultation> result = new MyList<>();
         
         // Dequeue and enqueue to view all elements
@@ -216,7 +216,7 @@ public class ConsultationManager {
      * @return true if removed, false if not found
      */
     private boolean removeFromQueue(String consultationId) {
-        QueueInterface<Consultation> tempQueue = new MyQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>();
         boolean found = false;
         
         // Look for the consultation in the queue
@@ -243,7 +243,7 @@ public class ConsultationManager {
      * @return true if found in queue, false otherwise
      */
     private boolean isInQueue(String consultationId) {
-        QueueInterface<Consultation> tempQueue = new MyQueue<>();
+        QueueInterface<Consultation> tempQueue = new ArrayQueue<>();
         boolean found = false;
         
         // Check each consultation in the queue

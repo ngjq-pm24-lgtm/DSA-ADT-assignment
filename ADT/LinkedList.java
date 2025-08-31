@@ -22,25 +22,6 @@ public class LinkedList<T> implements ListInterface<T>, Serializable {
       firstNode = null;
       numberOfEntries = 0;
     }
-
-    public boolean addLast(T newEntry) {
-        if (newEntry == null) return false;
-
-        Node newNode = new Node(newEntry);
-
-        if (isEmpty()) {
-            firstNode = newNode;
-        } else {                        
-            Node currentNode = firstNode;	
-            while (currentNode.next != null) { 
-                currentNode = currentNode.next;
-            }
-            currentNode.next = newNode; 
-        }
-
-        numberOfEntries++;
-        return true;
-    }
   
     @Override
     public boolean add(T newEntry) {
@@ -254,6 +235,53 @@ public class LinkedList<T> implements ListInterface<T>, Serializable {
         }
         return outputStr;
     }
+    
+    // return a new linked list that contain common elements in both lists
+    public LinkedList<T> intersection(LinkedList<T> otherList) {
+        LinkedList<T> result = new LinkedList<>();
+
+        if (otherList == null || otherList.isEmpty() || this.isEmpty()) {
+            return result;
+        }
+
+        Node current = this.firstNode;
+        while (current != null) {
+            if (otherList.contains(current.data) && !result.contains(current.data)) {
+                result.add(current.data);
+            }
+            current = current.next;
+        }
+
+        return result;
+    }
+
+    // return a new LinkedList containing all unique elements from both list
+    public LinkedList<T> union(LinkedList<T> otherList) {
+        LinkedList<T> result = new LinkedList<>();
+
+        // Add elements from this list
+        Node current = this.firstNode;
+        while (current != null) {
+            if (!result.contains(current.data)) {
+                result.add(current.data);
+            }
+            current = current.next;
+        }
+
+        // Add elements from the other list
+        if (otherList != null) {
+            current = otherList.firstNode;
+            while (current != null) {
+                if (!result.contains(current.data)) {
+                    result.add(current.data);
+                }
+                current = current.next;
+            }
+        }
+
+        return result;
+    }
+
   
     
     //return new linkedlist with same reference to inner objects as old linkedlist
@@ -273,6 +301,54 @@ public class LinkedList<T> implements ListInterface<T>, Serializable {
 
         return copy;
     }
+    
+    public void merge(LinkedList<T> other) {
+        if (other == null || other.isEmpty()) {
+            return;
+        }
+
+        if (this.isEmpty()) {
+            this.firstNode = other.firstNode;
+        } else {
+            Node current = this.firstNode;
+            while (current.next != null) {
+                current = current.next;
+            }
+            current.next = other.firstNode;
+        }
+
+        this.numberOfEntries += other.numberOfEntries;
+        other.clear(); // optional: clear the merged list
+    }
+
+    public void reverse() {
+        Node previous = null;
+        Node current = firstNode;
+        Node next = null;
+        while (current != null) {
+            next = current.next;
+            current.next = previous;
+            previous = current;
+            current = next;
+        }
+        firstNode = previous;
+    }
+
+    public void removeDuplicates() {
+        Node current = firstNode;
+        while (current != null) {
+            Node runner = current;
+            while (runner.next != null) {
+                if (runner.next.data.equals(current.data)) {
+                    runner.next = runner.next.next;
+                } else {
+                    runner = runner.next;
+                }
+            }
+            current = current.next;
+        }
+    }
+
 
   
     @Override

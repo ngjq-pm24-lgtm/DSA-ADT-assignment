@@ -12,7 +12,6 @@ import Entity.Appointment;
 import Entity.Payment;
 import boundary.MedicalCard;
 import dao.GenericDAO;
-import java.time.format.DateTimeParseException;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -180,6 +179,7 @@ public void registerNewPatient() {
     // Store in patient map
     Scanner scanner = new Scanner(System.in);
     patientMap.add(id, patient);
+    GenericDAO.saveToFile(patientMap, patientHashMapFile);
     System.out.print("\nPatient registered successfully. Patient ID: " + id + "\n");
 
     // Ask user if they want to generate ID card
@@ -732,6 +732,7 @@ private String inputValidAddress( ) {
                     System.out.println("Invalid choice.");
             }
             if (!done) {
+                GenericDAO.saveToFile(patientMap, patientHashMapFile);
                 System.out.println("Field updated successfully.");
             }
         }
@@ -741,6 +742,7 @@ private String inputValidAddress( ) {
     public boolean deletePatient(String id) {
         if (patientMap.contains(id)) {
             patientMap.remove(id);
+            GenericDAO.saveToFile(patientMap, patientHashMapFile);
             System.out.println("Patient deleted successfully.");
             return true;
         }
@@ -830,6 +832,7 @@ private String inputValidAddress( ) {
         }
 
         patientQueue.enqueue(patientMap.get(id));
+        GenericDAO.saveToFile(patientQueue, patientQueueFile);
         System.out.println("Patient " + id + " added to queue.");
     }
 
@@ -854,6 +857,7 @@ private String inputValidAddress( ) {
                 case 'Y':
                 case 'y':
                     Patient removedPatient = patientQueue.dequeue();
+                    GenericDAO.saveToFile(patientQueue, patientQueueFile);
                     System.out.println("Patient " + removedPatient.getPatientId() + " removed from queue.");
                     break;
                 case 'N':
