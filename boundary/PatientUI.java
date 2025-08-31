@@ -37,7 +37,7 @@ public class PatientUI {
 
         // Validate input
         if (!scanner.hasNextInt()) {
-            System.out.println("Invalid input. Please enter a number between 0 and 5.");
+            System.out.println("Invalid input. Please enter a number between 0 and 4.");
             scanner.nextLine(); // clear invalid input
             continue;           // redraw menu
         }
@@ -618,4 +618,5 @@ public void displayMessage(String msg) {
     System.out.println(msg);
 } 
 }
+
 
