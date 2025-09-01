@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Scanner;
+import boundary.PharmacyUI;
 
 public class ClinicSystemManager {
     
@@ -90,6 +91,8 @@ public class ClinicSystemManager {
                 case 4:
                     break;
                 case 5:
+                    PharmacyUI pharmacyUI = new PharmacyUI();
+                    pharmacyUI.getMenu();
                     break;
                 default:
                     System.out.println("Please enter a number between 0 to 5 only.");

@@ -1,8 +1,8 @@
-//JQ
 package boundary;
 
 import control.PharmacyManager;
 import Entity.DispenseOrder;
+import Entity.Medicine;
 import java.util.Scanner;
 
 public class PharmacyUI {
@@ -14,7 +14,7 @@ public class PharmacyUI {
         scanner = new Scanner(System.in);
     }
 
-    public void start() {
+    public void getMenu() {
         int choice;
         do {
             System.out.println("\n=== Pharmacy Management ===");
@@ -50,17 +50,58 @@ public class PharmacyUI {
     }
 
     private void addDispenseOrder() {
-        System.out.print("Enter Patient ID: ");
-        String patientID = scanner.nextLine();
-        System.out.print("Enter Medicine ID: ");
-        String medID = scanner.nextLine();
-        System.out.print("Enter Quantity: ");
-        int quantity = scanner.nextInt();
-        scanner.nextLine(); // consume newline
-        System.out.print("Enter Date (YYYY-MM-DD): ");
-        String date = scanner.nextLine();
+        String patientID, doctorID, medID;
+        int quantity;
+        String date;
 
-        DispenseOrder order = new DispenseOrder(patientID, medID, quantity, date);
+        // Patient ID validation loop
+        do {
+            System.out.print("Enter Patient ID: ");
+            patientID = scanner.nextLine();
+            if (!manager.isValidPatientID(patientID)) {
+                System.out.println("Patient ID not found. Please try again or type 'exit' to cancel.");
+                if (patientID.equalsIgnoreCase("exit")) return;
+            }
+        } while (!manager.isValidPatientID(patientID));
+
+        // Doctor ID validation loop
+        do {
+            System.out.print("Enter Doctor ID: ");
+            doctorID = scanner.nextLine();
+            if (!manager.isValidDoctorID(doctorID)) {
+                System.out.println("Doctor ID not found. Please try again or type 'exit' to cancel.");
+                if (doctorID.equalsIgnoreCase("exit")) return;
+            }
+        } while (!manager.isValidDoctorID(doctorID));
+
+        // Medicine ID validation loop
+        Medicine selectedMedicine;
+        do {
+            System.out.print("Enter Medicine ID: ");
+            medID = scanner.nextLine();
+            selectedMedicine = manager.findMedicineByID(medID);
+            if (selectedMedicine == null) {
+                System.out.println("Medicine ID not found. Please try again or type 'exit' to cancel.");
+                if (medID.equalsIgnoreCase("exit")) return;
+            }
+        } while (selectedMedicine == null);
+
+        // Quantity validation loop
+        do {
+            System.out.print("Enter Quantity: ");
+            quantity = scanner.nextInt();
+            scanner.nextLine(); // consume newline
+            if (quantity <= 0) {
+                System.out.println("Quantity must be greater than 0. Please try again.");
+            } else if (quantity > selectedMedicine.getStock()) {
+                System.out.println("Quantity exceeds available stock (" + selectedMedicine.getStock() + "). Please enter a lower quantity.");
+            }
+        } while (quantity <= 0 || quantity > selectedMedicine.getStock());
+
+        System.out.print("Enter Date (YYYY-MM-DD): ");
+        date = scanner.nextLine();
+
+        DispenseOrder order = new DispenseOrder(patientID, doctorID, medID, quantity, date);
         manager.addDispenseOrder(order);
     }
 }

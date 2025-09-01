@@ -1,17 +1,18 @@
-//JQ
-
+// Author: JQ
 package Entity;
 
 import java.io.Serializable;
 
 public class DispenseOrder implements Serializable {
     private String patientID;
+    private String doctorID;
     private String medID;
     private int quantity;
     private String date;
 
-    public DispenseOrder(String patientID, String medID, int quantity, String date) {
+    public DispenseOrder(String patientID, String doctorID, String medID, int quantity, String date) {
         this.patientID = patientID;
+        this.doctorID = doctorID;
         this.medID = medID;
         this.quantity = quantity;
         this.date = date;
@@ -23,6 +24,14 @@ public class DispenseOrder implements Serializable {
 
     public void setPatientID(String patientID) {
         this.patientID = patientID;
+    }
+
+    public String getDoctorID() {
+        return doctorID;
+    }
+
+    public void setDoctorID(String doctorID) {
+        this.doctorID = doctorID;
     }
 
     public String getMedID() {
@@ -47,5 +56,5 @@ public class DispenseOrder implements Serializable {
 
     public void setDate(String date) {
         this.date = date;
-    }
+    }   
 }
