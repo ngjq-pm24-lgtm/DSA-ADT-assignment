@@ -503,7 +503,7 @@ public String generatePaymentHistoryReport(MapInterface<String, Payment> payment
             if (e != null && !e.isRemoved()) {
                 Patient p = e.getValue();
                 sb.append(String.format(
-                    " %-10s | %-18s | %-12s | %-6s | %-3d | %-9s | %-10s | %-11s | %-11s | %-19s | %-19s | %-13s \n",
+                    " %-10s | %-18s | %-12s | %-6s | %-3d | %-9s | %-11s | %-11s | %-11s | %-19s | %-19s | %-13s \n",
                     p.getPatientId(),
                     p.getName(),
                     p.getICNo(),
@@ -618,6 +618,7 @@ public void displayMessage(String msg) {
     System.out.println(msg);
 } 
 }
+
 
 
 
