@@ -1,4 +1,3 @@
-//JQ
 package Entity;
 
 import java.io.Serializable;
@@ -16,8 +15,20 @@ public class Medicine implements Serializable {
         this.price = price;
     }
 
+    // Constructor for loading from text file (all fields as String)
+    public Medicine(String[] fields) {
+        this.medID = fields[0];
+        this.name = fields[1];
+        this.stock = Integer.parseInt(fields[2]);
+        this.price = Double.parseDouble(fields[3]);
+    }
 
-    //getters and setters
+    // Static method to parse a line from medicine.txt
+    public static Medicine fromTextLine(String line) {
+        String[] fields = line.split(",");
+        return new Medicine(fields);
+    }
+
     public String getMedID() {
         return medID;
     }
@@ -48,5 +59,10 @@ public class Medicine implements Serializable {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    @Override
+    public String toString() {
+        return medID + "," + name + "," + stock + "," + price;
     }
 }
