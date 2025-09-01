@@ -8,6 +8,12 @@ import Entity.Patient;
 import Entity.Doctor;
 import ADT.ArrayQueue;
 import ADT.MapInterface;
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 
 public class PharmacyManager {
     private ArrayQueue<DispenseOrder> dispenseQueue;
@@ -16,15 +22,25 @@ public class PharmacyManager {
 
     public PharmacyManager() {
         dispenseQueue = new ArrayQueue<>(10);
-        medicines = new Medicine[10];
+        medicines = new Medicine[20];
         medCount = 0;
         preloadMedicines();
     }
 
     private void preloadMedicines() {
-        medicines[medCount++] = new Medicine("M001", "Panadol", 100, 2.00);
-        medicines[medCount++] = new Medicine("M002", "Cough Syrup", 50, 5.00);
-        // Add more medicines if needed
+        try (BufferedReader br = new BufferedReader(new FileReader("data/medicine.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null && medCount < medicines.length) {
+                // Each line: medID,name,stock,price
+                String[] fields = line.split(",");
+                if (fields.length == 4) {
+                    Medicine med = new Medicine(fields[0], fields[1], Integer.parseInt(fields[2]), Double.parseDouble(fields[3]));
+                    medicines[medCount++] = med;
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error loading medicines from file: " + e.getMessage());
+        }
     }
 
     public Medicine findMedicineByID(String medID) {
@@ -69,8 +85,22 @@ public class PharmacyManager {
         if (!dispenseQueue.isFull()) {
             dispenseQueue.enqueue(order);
             System.out.println("Dispense order added successfully.");
+            // Save to file
+            saveOrderToFile(order);
         } else {
             System.out.println("Dispense queue is full. Cannot add new order.");
+        }
+    }
+
+    private void saveOrderToFile(DispenseOrder order) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter("data/dispenseorders.txt", true))) {
+            pw.println(order.getPatientID() + "," +
+                       order.getDoctorID() + "," +
+                       order.getMedID() + "," +
+                       order.getQuantity() + "," +
+                       order.getDate());
+        } catch (IOException e) {
+            System.out.println("Error saving dispense order to file: " + e.getMessage());
         }
     }
 
@@ -147,5 +177,53 @@ public class PharmacyManager {
         }
     }
 
-    
+    public ArrayList<DispenseOrder> getAllDispenseOrders() {
+        ArrayList<DispenseOrder> list = new ArrayList<>();
+        for (int i = 0; i < dispenseQueue.size(); i++) {
+            list.add(dispenseQueue.get(i));
+        }
+        return list;
+    }
+
+    public void processOrderByIndex(int index) {
+        if (index < 0 || index >= dispenseQueue.size()) {
+            System.out.println("Invalid order index.");
+            return;
+        }
+        DispenseOrder order = dispenseQueue.get(index);
+
+        // Remove the selected order from the queue
+        ArrayQueue<DispenseOrder> tempQueue = new ArrayQueue<>(dispenseQueue.size());
+        for (int i = 0; i < dispenseQueue.size(); i++) {
+            if (i != index) {
+                tempQueue.enqueue(dispenseQueue.get(i));
+            }
+        }
+        dispenseQueue.clear();
+        for (int i = 0; i < tempQueue.size(); i++) {
+            dispenseQueue.enqueue(tempQueue.get(i));
+        }
+
+        // Process the selected order
+        if (!isValidPatientID(order.getPatientID())) {
+            System.out.println("Error: Patient ID not found (" + order.getPatientID() + ")");
+            return;
+        }
+        if (!isValidDoctorID(order.getDoctorID())) {
+            System.out.println("Error: Doctor ID not found (" + order.getDoctorID() + ")");
+            return;
+        }
+        Medicine med = findMedicineByID(order.getMedID());
+        if (med == null) {
+            System.out.println("Error: Medicine ID not found (" + order.getMedID() + ")");
+            return;
+        }
+        if (med.getStock() >= order.getQuantity()) {
+            med.setStock(med.getStock() - order.getQuantity());
+            System.out.println("Dispensed " + order.getQuantity() + " of " + med.getName() +
+                " to " + order.getPatientID() + " by Doctor " + order.getDoctorID());
+        } else {
+            System.out.println("Insufficient stock for " + med.getName());
+        }
+    }
 }

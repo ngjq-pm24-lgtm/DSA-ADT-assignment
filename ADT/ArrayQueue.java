@@ -13,7 +13,11 @@ public class ArrayQueue<T> implements QueueInterface<T> {
         rear = -1;
         size = 0;
     }
-
+public void clear() {
+    front = 0;
+    rear = -1;
+    size = 0;
+}
     @Override
     public void enqueue(T element) {
         if (isFull()) {

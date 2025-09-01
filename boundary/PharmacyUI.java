@@ -4,6 +4,7 @@ import control.PharmacyManager;
 import Entity.DispenseOrder;
 import Entity.Medicine;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 public class PharmacyUI {
     private PharmacyManager manager;
@@ -32,7 +33,7 @@ public class PharmacyUI {
                     addDispenseOrder();
                     break;
                 case 2:
-                    manager.processNextOrder();
+                    processSelectedOrder();
                     break;
                 case 3:
                     manager.generateStockReport();
@@ -103,5 +104,30 @@ public class PharmacyUI {
 
         DispenseOrder order = new DispenseOrder(patientID, doctorID, medID, quantity, date);
         manager.addDispenseOrder(order);
+    }
+
+    private void processSelectedOrder() {
+        ArrayList<DispenseOrder> orders = manager.getAllDispenseOrders();
+        if (orders.isEmpty()) {
+            System.out.println("No dispense orders to process.");
+            return;
+        }
+        System.out.println("Existing Dispense Orders:");
+        for (int i = 0; i < orders.size(); i++) {
+            DispenseOrder order = orders.get(i);
+            System.out.println((i + 1) + ". PatientID: " + order.getPatientID() +
+                               ", DoctorID: " + order.getDoctorID() +
+                               ", MedicineID: " + order.getMedID() +
+                               ", Quantity: " + order.getQuantity() +
+                               ", Date: " + order.getDate());
+        }
+        System.out.print("Select order number to process (or 0 to cancel): ");
+        int selection = scanner.nextInt();
+        scanner.nextLine(); // consume newline
+        if (selection < 1 || selection > orders.size()) {
+            System.out.println("Cancelled or invalid selection.");
+            return;
+        }
+        manager.processOrderByIndex(selection - 1);
     }
 }
