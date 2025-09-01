@@ -85,12 +85,14 @@ public class ClinicSystemManager {
                     consultationUI.menu();
                     break;
                 case 3:
-                    doctorManager.runDoctorManager();
+                    doctorManager.getMenu();
                     break;
                 case 4:
                     break;
                 case 5:
                     break;
+                default:
+                    System.out.println("Please enter a number between 0 to 5 only.");
             }
         }while(choice != 0);
     }

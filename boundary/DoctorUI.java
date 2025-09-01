@@ -20,34 +20,53 @@ public class DoctorUI {
         int choice;
         do{
             System.out.println("\nDOCTOR MAINTENANCE MENU\n-----------------------");
-            System.out.println("1. Add new doctor record");
-            System.out.println("2. Search/update doctor record");
-            System.out.println("3. Remove doctor record");
-            System.out.println("4. Manage duty schedule");
-            System.out.println("5. Track doctor availability");
-            System.out.println("6. List all doctors");
-            System.out.println("7. Generate reports");
-            System.out.println("0. Quit");
+            System.out.println("1. Maintain doctor records");
+            System.out.println("2. Manage doctor duty schedule");
+            System.out.println("3. Track doctor availability");
+            System.out.println("4. Generate reports");
+            System.out.println("0. Return to previous menu");
             System.out.print("Enter choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();
         
-            if(choice<0 || choice>7)
-                System.out.println("Please enter 0 to 7 only.");
-        }while(choice<0 || choice>7);
+            if(choice<0 || choice>4)
+                System.out.println("Please enter 0 to 4 only.");
+        }while(choice<0 || choice>4);
         
         return choice;
     }
     
+    public int getDoctorRecordsMenuChoice(){
+        
+        int choice;
+        do{
+            System.out.println("DOCTOR RECORDS MENU\n-------------------");
+            System.out.println("1. Add a new doctor record");
+            System.out.println("2. Search/update a doctor record");
+            System.out.println("3. Remove a doctor record");
+            System.out.println("4. View all doctor records");
+            System.out.println("0. Return to previous menu");
+            System.out.print("Enter choice: ");
+            choice = scanner.nextInt();
+            scanner.nextLine();
+            
+            if (choice < 0 || choice > 4) {
+                System.out.println("Please enter 0 to 4 only.");
+            }
+        } while (choice < 0 || choice > 4);
+        
+        return choice;
+    }
+            
     public int getDutyScheduleMenuChoice(){
         
         int choice;
         do{
             System.out.println("\nDUTY SCHEDULE MENU\n------------------");
-            System.out.println("1. Assign doctor to a time slot");
+            System.out.println("1. Assign doctor to a timeslot");
             System.out.println("2. Remove doctor from a timeslot");
             System.out.println("3. View all duty schedules");
-            System.out.println("0. Back to previous menu");
+            System.out.println("0. Return to previous menu");
             System.out.print("Enter choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();
@@ -82,9 +101,9 @@ public class DoctorUI {
         int choice;
         do{
             System.out.println("\nDOCTOR AVAILABILITY MENU\n------------------------");
-            System.out.println("1. View available doctors by time slot");
-            System.out.println("2. View unavailable doctors by time slot");
-            System.out.println("3. View availability of specific doctor");
+            System.out.println("1. View available doctors by timeslot");
+            System.out.println("2. View unavailable doctors by timeslot");
+            System.out.println("3. View availability of a specific doctor");
             System.out.println("0. Back to previous menu");
             System.out.print("Enter choice: ");
             choice = scanner.nextInt();
@@ -133,10 +152,14 @@ public class DoctorUI {
         return null;
     }
 
-    public void showDoctorsInTimeslot(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
-        System.out.println("\nDoctors for " + 
-                DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(chosenTimeslot.getTimeslot().getDay().toUpperCase()))
-                + "\n-----------------------------");
+    public void showDoctorsInTimeslot(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot, String title){
+        System.out.printf("\n%s Doctors for %s (%s) %02d:00\n",
+                title,
+                DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(chosenTimeslot.getTimeslot().getDay().toUpperCase())),
+                chosenTimeslot.getTimeslot().getDay(),
+                chosenTimeslot.getTimeslot().getHour());
+        System.out.println("-".repeat(60));
+                
         if(doctorList == null || doctorList.isEmpty()){
             System.out.println("No doctors within this timeslot.");
             return;
@@ -148,10 +171,10 @@ public class DoctorUI {
         }
     }
     
-    public Doctor chooseDoctor(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot){
+    public Doctor chooseDoctor(ListInterface<Doctor> doctorList, TimeSlotKey chosenTimeslot, String title){
         int choice;
         do{
-            showDoctorsInTimeslot(doctorList, chosenTimeslot);
+            showDoctorsInTimeslot(doctorList, chosenTimeslot, title);
             System.out.print("Choose a doctor: ");
             choice = scanner.nextInt();
             
@@ -189,7 +212,7 @@ public class DoctorUI {
     public void showDutySchedule(MapInterface<TimeSlotKey, ListInterface<Doctor>> dutySchedule) {
         String chosenDay = getWeekDayChoice();
 
-        System.out.printf("\n\n--- Duty Schedule for %s ---\n", chosenDay);
+        System.out.printf("\n\n--- Duty Schedule for the upcoming %s ---\n\n", chosenDay);
         
         int index = 1;
         for(TimeSlotKey timeslot : TimeSlotKey.values()){
@@ -205,7 +228,7 @@ public class DoctorUI {
                         int doctorCount = -1;
                         while(iterator.hasNext()){
                             if(++doctorCount % 5 == 0 && doctorCount != 0)
-                                System.out.print("\n                  ");
+                                System.out.print("\n                   ");
                             Doctor doc = iterator.next();
                             System.out.printf("%s (%d)", doc.getName(), doc.getDoctorID());
                             if(iterator.hasNext()) System.out.print(", ");   
@@ -220,27 +243,32 @@ public class DoctorUI {
             }
 
         }
-        System.out.println("-----------------------------\n");
+        System.out.println("-----------------------------------------------\n");
     }
 
     
-    public int getUpdateDoctorChoice(){
-        
+    public int getUpdateDoctorChoice() {
         int choice;
-        do{
+        do {
             System.out.println("\n1. Update doctor name");
             System.out.println("2. Update doctor phone number");
+            System.out.println("3. Update doctor gender");
+            System.out.println("4. Update doctor email");
+            System.out.println("5. Update doctor position");
+            System.out.println("6. Update doctor qualification");
             System.out.println("0. Quit");
             System.out.print("Enter choice: ");
+
             choice = scanner.nextInt();
             scanner.nextLine();
-            
-            if(choice<0 || choice>2)
-                System.out.println("Please enter 0 to 2 only.");
-        }while(choice<0 || choice>2);
-        
+
+            if (choice < 0 || choice > 6) {
+                System.out.println("Please enter 0 to 6 only.");
+            }
+        } while (choice < 0 || choice > 6);
         return choice;
     }
+
     
     public void printDoctorDetails(Doctor doctor){
         System.out.println("\nDoctor details\n--------------");
@@ -270,26 +298,45 @@ public class DoctorUI {
     }
     
     public String inputDoctorName() {
-        String doctorName;
-        
         System.out.print("Enter doctor name: ");
-        doctorName = scanner.nextLine();
-        
-        return doctorName;
+        return scanner.nextLine();
     }
     
     public String inputDoctorPhone() {
-        String doctorPhone;
-
-        System.out.print("Enter doctor phone: ");
-        doctorPhone = scanner.nextLine();
-        
-        return doctorPhone;
+        System.out.print("Enter doctor phone number: ");
+        return scanner.nextLine();
     }
     
+    public String inputDoctorGender() {
+        System.out.print("Enter doctor gender (Male/Female): ");
+        return scanner.nextLine();
+    }
+
+    public String inputDoctorEmail() {
+        System.out.print("Enter doctor email: ");
+        return scanner.nextLine();
+    }
+
+    public String inputDoctorPosition() {
+        System.out.print("Enter doctor position (Internship/Junior/Senior/Consultant): ");
+        return scanner.nextLine();
+    }
+
+    public String inputDoctorQualification() {
+        System.out.print("Enter doctor qualification (MBBS/MD/PhD/Fellowship): ");
+        return scanner.nextLine();
+    }
+
     
     public void listAllDoctors(String outputStr) {
-        System.out.println("\nList of Doctors\n---------------\n" + outputStr);
+        System.out.println("\n");
+        System.out.println("=".repeat(143));
+        System.out.printf("    %-8s %-40s %-12s %-8s %-40s %-12s %-15s\n",
+                "ID", "Name", "Phone", "Gender", "Email", "Position", "Qualification");
+        System.out.println("=".repeat(143));
+        
+        System.out.print(outputStr);
+        System.out.println("=".repeat(143));
     }
     
     public void generateDoctorDutyReport(MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable, 
@@ -306,7 +353,7 @@ public class DoctorUI {
         System.out.println("                               CLINIC MANAGEMENT SYSTEM - DOCTOR DUTY SCHEDULING REPORT");
         System.out.println("===========================================================================================================================================");
         System.out.printf("Generated at: %s%n", formattedTime);
-        System.out.println("---------------------------------------------\n");
+        System.out.println("-".repeat(50) + "\n");
 
         System.out.println(" ".repeat(50) + "'#' indicates assigned timeslot");
         System.out.println(" ".repeat(50) + "'@' indicates booked timeslot");
@@ -432,7 +479,7 @@ public class DoctorUI {
         System.out.println("                                       CLINIC MANAGEMENT SYSTEM - DOCTOR AVAILABILITY REPORT");
         System.out.println("===========================================================================================================================================");
         System.out.printf("Generated at: %s%n", formattedTime);
-        System.out.println("---------------------------------------------\n");
+        System.out.println("-".repeat(50) + "\n");
 
         int[] totalAvailableDoctorsByDay = new int[7];
         int totalAvailabilities = 0, maxAvailable = 0, minAvailable = 0;
@@ -503,7 +550,7 @@ public class DoctorUI {
             System.out.println();
         }
 
-        System.out.println("-----------------------------------------------------> Weekdays");
+        System.out.println("-----------------------------------------------------> Upcoming Weekdays");
 
         System.out.print("    ");
         for (String weekday : weekdays) {

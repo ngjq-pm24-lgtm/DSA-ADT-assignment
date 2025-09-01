@@ -83,7 +83,7 @@ public class ConsultationUI {
             if (availableDoctors == null || availableDoctors.isEmpty()) {
                 System.out.println("No doctors available for this slot, please choose another.");
             }else{
-                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot);
+                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot, "Available");
             }
         }while(availableDoctors == null || availableDoctors.isEmpty());
 
@@ -149,10 +149,10 @@ public class ConsultationUI {
             }else if(followUpDate.isEqual(baseDate) && 
                     Integer.compare(chosenTimeslot.getTimeslot().getHour(), 
                             baseConsultation.getTimeslot().getTimeslot().getHour()) < 1 ){
-                System.out.println("Follow-up consultation's time must not be earlier than base consultation if both are on same day.");
+                System.out.println("Follow-up consultation's time must not be same or earlier than base consultation if both are on same day.");
                 repeat = true;
             }else {
-                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot);
+                chosenDoctor = doctorUI.chooseDoctor(availableDoctors, chosenTimeslot, "Available");
             }
         } while (repeat);
 

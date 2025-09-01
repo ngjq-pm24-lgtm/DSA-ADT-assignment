@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Iterator;
+import java.util.Scanner;
 
 public class DoctorManager {
     private static MapInterface<TimeSlotKey, ListInterface<Doctor>> dutyScheduleTable;
@@ -19,6 +20,7 @@ public class DoctorManager {
     private static String doctorTextFile = "data/doctors.txt";
     private static String dutyScheduleFile = "data/dutyScheduleTable.dat";
     private static String availabilityTableFile = "data/availabilityTable.dat";
+    Scanner scanner = new Scanner(System.in);
 
     public DoctorManager() {
         doctorRecords = GenericDAO.retrieveFromFile(doctorFile);
@@ -43,7 +45,7 @@ public class DoctorManager {
         }
     }
     
-    public void runDoctorManager() {
+    public void getMenu() {
         int choice;
         do {
           choice = doctorUI.getDoctorMaintenanceMenuChoice();
@@ -52,46 +54,95 @@ public class DoctorManager {
             case 0:
                 break;
             case 1:
-                addNewDoctor();
-                displayAllDoctors();
+                int docRecordsChoice = doctorUI.getDoctorRecordsMenuChoice();
+                switch(docRecordsChoice){
+                    case 0:
+                        break;
+                    case 1:
+                        addNewDoctor();
+                        break;
+                    case 2:
+                        doctorID = doctorUI.inputDoctorID();
+                        Doctor doctor = doctorRecords.get(doctorID);
+                        if (doctor != null) {
+                            doctorUI.printDoctorDetails(doctor);
+                            int choice2 = doctorUI.getUpdateDoctorChoice();
+                            switch (choice2) {
+                                case 0:
+                                    break;
+                                case 1:
+                                    String newName = doctorUI.inputDoctorName();
+                                    doctor.setName(newName);
+                                    System.out.printf("Doctor %d name changed to %s successfully.\n", doctor.getDoctorID(), doctor.getName());
+                                    break;
+                                case 2:
+                                    String newPhone = doctorUI.inputDoctorPhone();
+                                    doctor.setPhoneNumber(newPhone);
+                                    System.out.printf("Doctor %d phone number changed to %s successfully.\n", doctor.getDoctorID(), doctor.getPhoneNumber());
+                                    break;
+                                case 3:
+                                    String newGender = doctorUI.inputDoctorGender();
+                                    doctor.setGender(newGender);
+                                    System.out.printf("Doctor %d gender changed to %s successfully.\n", doctor.getDoctorID(), doctor.getGender());
+                                    break;
+                                case 4:
+                                    String newEmail = doctorUI.inputDoctorEmail();
+                                    doctor.setEmail(newEmail);
+                                    System.out.printf("Doctor %d email changed to %s successfully.\n", doctor.getDoctorID(), doctor.getEmail());
+                                    break;
+                                case 5:
+                                    String newPosition = doctorUI.inputDoctorPosition();
+                                    doctor.setPosition(newPosition);
+                                    System.out.printf("Doctor %d position changed to %s successfully.\n", doctor.getDoctorID(), doctor.getPosition());
+                                    break;
+                                case 6:
+                                    String newQualification = doctorUI.inputDoctorQualification();
+                                    doctor.setQualification(newQualification);
+                                    System.out.printf("Doctor %d qualification changed to %s successfully.\n", doctor.getDoctorID(), doctor.getQualification());
+                                    break;
+                                default:
+                                    System.out.println("Invalid option. Please try again.");
+                                    break;
+                            }
+                        } else {
+                            System.out.printf("Doctor %d does not exist.\n", doctorID);
+                        }
+                        break;
+                    case 3:
+                        doctorID = doctorUI.inputDoctorID();
+                        if (isDoctorAssignedToDuty(doctorID)) {
+                            System.out.println("This doctor is currently assigned to duty. Deletion rejected.");
+                            break;
+                        }
+
+                        Doctor docToRemove = doctorRecords.get(doctorID);
+                        if (docToRemove != null) {
+                            System.out.printf("Are you sure to remove doctor %d (%s)? (Y/N): ", docToRemove.getDoctorID(), docToRemove.getName());
+                            char removeDocChoice = scanner.nextLine().charAt(0);
+                            switch(removeDocChoice){
+                                case 'Y':
+                                case 'y':
+                                    Doctor removedDoctor = doctorRecords.remove(doctorID);
+                                    System.out.printf("Record of doctor %d (%s) removed successfully.\n", removedDoctor.getDoctorID(), removedDoctor.getName());
+                                    GenericDAO.saveToFile(doctorRecords, doctorFile);
+                                    break;
+                                case 'N':
+                                case 'n':
+                                    System.out.println("Deletion canceled.");
+                                    break;
+                                default:
+                                    System.out.println("Invalid choice, please try again.");
+                            }
+                        } else {
+                            System.out.printf("Doctor %d does not exist.\n", doctorID);
+                        }
+                        break;
+                    case 4:
+                        displayAllDoctors();
+                        break;
+                }
                 break;
             case 2:
-                doctorID = doctorUI.inputDoctorID();
-                Doctor doctor = doctorRecords.get(doctorID);
-                if(doctor != null){
-                    doctorUI.printDoctorDetails(doctor);
-                    int choice2 = doctorUI.getUpdateDoctorChoice();
-                    switch(choice2){
-                        case 0:
-                            break;
-                        case 1:
-                            String newName = doctorUI.inputDoctorName();
-                            doctor.setName(newName);
-                            break;
-                        case 2:
-                            String newPhone = doctorUI.inputDoctorPhone();
-                            doctor.setPhoneNumber(newPhone);
-                    }
-                }else{
-                    System.out.println("This doctor does not exist.");
-                }
-                break;
-            case 3:
-                doctorID = doctorUI.inputDoctorID();
-                if(isDoctorAssignedToDuty(doctorID)){
-                    System.out.println("This doctor is currently assigned to duty. Operation rejected");
-                    break;
-                }
-                
-                Doctor removedDoctor = doctorRecords.remove(doctorID);
-                if(removedDoctor != null){
-                    System.out.println(removedDoctor.getName() + " removed.");
-                    GenericDAO.saveToFile(doctorRecords, doctorFile);
-                }
-                else
-                    System.out.println("This doctor record does not exist.");
-                break;
-            case 4:
                 int choice3 = doctorUI.getDutyScheduleMenuChoice();
                 TimeSlotKey chosenTimeslot;
                 int[] doctorIDs, approved, rejected;
@@ -146,7 +197,7 @@ public class DoctorManager {
                         
                         ListInterface<Doctor> doctorsOnDuty = dutyScheduleTable.get(chosenTimeslot);
                         
-                        doctorUI.showDoctorsInTimeslot(doctorsOnDuty, chosenTimeslot);
+                        doctorUI.showDoctorsInTimeslot(doctorsOnDuty, chosenTimeslot, "On-Duty");
                         
                         if(doctorsOnDuty != null && !doctorsOnDuty.isEmpty()){
                             doctorIDs = doctorUI.inputDoctorIDCommaSeparated();
@@ -198,7 +249,7 @@ public class DoctorManager {
                         break;
                 }
                 break;
-            case 5:
+            case 3:
                 int choice4 = doctorUI.getAvailabilityMenuChoice();
                 ListInterface<Doctor> availableDoctors;
                 switch(choice4){
@@ -207,7 +258,7 @@ public class DoctorManager {
                     case 1:
                         chosenTimeslot = doctorUI.getTimeslotChoice();
                         availableDoctors = availabilityTable.get(chosenTimeslot);
-                        doctorUI.showDoctorsInTimeslot(availableDoctors, chosenTimeslot);
+                        doctorUI.showDoctorsInTimeslot(availableDoctors, chosenTimeslot, "Available");
                         break;
                     case 2:
                         chosenTimeslot = doctorUI.getTimeslotChoice();
@@ -220,7 +271,7 @@ public class DoctorManager {
                                     unavailableDoctors.add(doctorEntry.getValue());
                             }
                         }
-                        doctorUI.showDoctorsInTimeslot(unavailableDoctors, chosenTimeslot);
+                        doctorUI.showDoctorsInTimeslot(unavailableDoctors, chosenTimeslot, "Unavailable");
                         break;
                     case 3:
                         doctorID = doctorUI.inputDoctorID();
@@ -230,11 +281,16 @@ public class DoctorManager {
                         else{
                             System.out.printf("\nDoctor %d Available Timeslots\n-------------------------------\n", doctorID);
                             boolean noAvailableSlot = true;
+                            int index = 1;
                             for (TimeSlotKey slot : TimeSlotKey.values()) {
                                 ListInterface<Doctor> doctorList = availabilityTable.get(slot);
                                 if (doctorList != null) {
                                     if (doctorList.contains(chosenDoctor)) {
-                                        System.out.println("  - " + slot + "\n");
+                                        System.out.printf("%2d) %s (%s) %02d:00\n", 
+                                                index++,
+                                                DoctorManager.getNextWeekdayFormatted(DayOfWeek.valueOf(slot.getTimeslot().getDay().toUpperCase())),
+                                                slot.getTimeslot().getDay(),
+                                                slot.getTimeslot().getHour());
                                         noAvailableSlot = false;
                                     }
                                 }
@@ -243,10 +299,7 @@ public class DoctorManager {
                         }
                 }
                 break;
-            case 6:
-                displayAllDoctors();
-                break;
-            case 7:
+            case 4:
                 int reportChoice = doctorUI.getReportGenerationMenuChoice();
                 switch(reportChoice){
                     case 0:
@@ -337,12 +390,18 @@ public class DoctorManager {
     public void addNewDoctor() {
         String name = doctorUI.inputDoctorName();
         String phone = doctorUI.inputDoctorPhone();
-
+        String gender = doctorUI.inputDoctorGender();
+        String email = doctorUI.inputDoctorEmail();
+        String position = doctorUI.inputDoctorPosition();
+        String qualification = doctorUI.inputDoctorQualification();
+        
         int newDoctorID = doctorRecords.size() == 0 ? 1001 : doctorRecords.findLargestKey() + 1;
-        Doctor newDoctor = new Doctor(newDoctorID, name, phone);
+        Doctor newDoctor = new Doctor(newDoctorID, name, phone, gender, email, position, qualification);
 
         doctorRecords.add(newDoctorID, newDoctor);
         GenericDAO.saveToFile(doctorRecords, doctorFile);
+        
+        System.out.printf("%s added successfully, assigned ID: %d\n", name, newDoctorID);
     }
     
     public static void resetDocAvailabilityForNewday(String weekday){
@@ -378,8 +437,18 @@ public class DoctorManager {
         int index = 1;
         for (int i = 0; i < doctorEntries.length; i++) {
             MapEntry<Integer, Doctor> doctorEntry = doctorEntries[i];
-            if (doctorEntry != null && !doctorEntry.isRemoved()) 
-                outputStr += String.format("%d) %s\n\n", index++, doctorEntry.getValue());
+            if (doctorEntry != null && !doctorEntry.isRemoved()){
+                Doctor doctor = doctorEntry.getValue();
+                outputStr += String.format("%2d) %-8d %-40s %-12s %-8s %-40s %-12s %-15s\n",
+                        index++,
+                        doctor.getDoctorID(),
+                        doctor.getName(),
+                        doctor.getPhoneNumber(),
+                        doctor.getGender(),
+                        doctor.getEmail(),
+                        doctor.getPosition(),
+                        doctor.getQualification());
+            }
         }
         return outputStr;
     }

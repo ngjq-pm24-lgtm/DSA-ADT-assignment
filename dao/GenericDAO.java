@@ -92,12 +92,16 @@ public class GenericDAO<K,V> {
                 }
 
                 String[] parts = line.split(",");
-                if (parts.length >= 3) {
+                if (parts.length >= 7) {
                     int doctorID = Integer.parseInt(parts[0].trim());
                     String name = parts[1].trim();
                     String phone = parts[2].trim();
+                    String gender = parts[3].trim();
+                    String email = parts[4].trim();
+                    String position = parts[5].trim();
+                    String qualification = parts[6].trim();
 
-                    Doctor doctor = new Doctor(doctorID, name, phone);
+                    Doctor doctor = new Doctor(doctorID, name, phone, gender, email, position, qualification);
                     doctorRecords.add(doctorID, doctor);
                 }
             }
