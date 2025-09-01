@@ -1,68 +1,65 @@
 package Entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Medicine implements Serializable {
     private String medID;
     private String name;
-    private int stock;
     private double price;
+    private ArrayList<MedicineBatch> batches;
 
-    public Medicine(String medID, String name, int stock, double price) {
+    public Medicine(String medID, String name, double price) {
         this.medID = medID;
         this.name = name;
-        this.stock = stock;
         this.price = price;
-    }
-
-    // Constructor for loading from text file (all fields as String)
-    public Medicine(String[] fields) {
-        this.medID = fields[0];
-        this.name = fields[1];
-        this.stock = Integer.parseInt(fields[2]);
-        this.price = Double.parseDouble(fields[3]);
-    }
-
-    // Static method to parse a line from medicine.txt
-    public static Medicine fromTextLine(String line) {
-        String[] fields = line.split(",");
-        return new Medicine(fields);
+        this.batches = new ArrayList<>();
     }
 
     public String getMedID() {
         return medID;
     }
 
-    public void setMedID(String medID) {
-        this.medID = medID;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    public void setStock(int stock) {
-        this.stock = stock;
     }
 
     public double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public ArrayList<MedicineBatch> getBatches() {
+        return batches;
+    }
+
+    public void addBatch(MedicineBatch batch) {
+        batches.add(batch);
+    }
+
+    // Get total stock from all batches
+    public int getTotalStock() {
+        int total = 0;
+        for (MedicineBatch batch : batches) {
+            total += batch.getStock();
+        }
+        return total;
+    }
+
+    // FEFO: Get batch with earliest expiry and available stock
+    public MedicineBatch getEarliestBatch() {
+        MedicineBatch earliest = null;
+        for (MedicineBatch batch : batches) {
+            if (batch.getStock() > 0) {
+                if (earliest == null || batch.getExpiryDate().compareTo(earliest.getExpiryDate()) < 0) {
+                    earliest = batch;
+                }
+            }
+        }
+        return earliest;
     }
 
     @Override
     public String toString() {
-        return medID + "," + name + "," + stock + "," + price;
+        return medID + "," + name + "," + price;
     }
 }
