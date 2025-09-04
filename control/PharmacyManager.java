@@ -17,6 +17,7 @@ public class PharmacyManager {
     private ArrayQueue<DispenseOrder> dispenseQueue;
     private ArrayList<Medicine> medicines;
 
+    //comstructor
     public PharmacyManager() {
         dispenseQueue = new ArrayQueue<>(10);
         medicines = new ArrayList<>();
@@ -24,6 +25,7 @@ public class PharmacyManager {
         loadDispenseOrdersFromFile();
     }
 
+    //data preloading
     private void preloadMedicines() {
         // Load medicine main info
         try (BufferedReader br = new BufferedReader(new FileReader("data/medicine.txt"))) {
@@ -31,6 +33,7 @@ public class PharmacyManager {
             while ((line = br.readLine()) != null) {
                 String[] fields = line.split(",");
                 if (fields.length == 3) {
+                    //create medicine object and add to list
                     Medicine med = new Medicine(fields[0], fields[1], Double.parseDouble(fields[2]));
                     medicines.add(med);
                 }
@@ -39,7 +42,7 @@ public class PharmacyManager {
             System.out.println("Error loading medicines from file: " + e.getMessage());
         }
 
-        // Load batches
+        // Load batches,each have own ArrayList<MedicineBatch> for batch management.
         try (BufferedReader br = new BufferedReader(new FileReader("data/medicinebatch.txt"))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -56,6 +59,18 @@ public class PharmacyManager {
         } catch (IOException e) {
             System.out.println("Error loading medicine batches from file: " + e.getMessage());
         }
+    }
+
+        //return queue n list for access
+    public ArrayList<Medicine> getMedicines() {
+    return medicines;
+}
+    public ArrayList<DispenseOrder> getAllDispenseOrders() {
+        ArrayList<DispenseOrder> list = new ArrayList<>();
+        for (int i = 0; i < dispenseQueue.size(); i++) {
+            list.add(dispenseQueue.get(i));
+        }
+        return list;
     }
 
     private void loadDispenseOrdersFromFile() {
@@ -77,6 +92,7 @@ public class PharmacyManager {
         }
     }
 
+    //medicine and validation
     public Medicine findMedicineByID(String medID) {
         for (Medicine med : medicines) {
             if (med.getMedID().equals(medID)) {
@@ -88,6 +104,7 @@ public class PharmacyManager {
 
     // Patient validation using PatientControl's patientMap
     public boolean isValidPatientID(String patientID) {
+        //Gets the patient map from PatientControl
         MapInterface<String, Patient> patientMap = control.PatientControl.getPatientMap();
         return patientMap != null && patientMap.contains(patientID);
     }
@@ -102,7 +119,8 @@ public class PharmacyManager {
             return false;
         }
     }
-
+//--------------------------------------------------------------------
+    //Dispense order management
     public void addDispenseOrder(DispenseOrder order) {
         if (!isValidPatientID(order.getPatientID())) {
             System.out.println("Error: Patient ID not found (" + order.getPatientID() + ")");
@@ -116,6 +134,7 @@ public class PharmacyManager {
             System.out.println("Error: Medicine ID not found (" + order.getMedID() + ")");
             return;
         }
+        //queue checking
         if (!dispenseQueue.isFull()) {
             dispenseQueue.enqueue(order);
             System.out.println("Dispense order added successfully.");
@@ -137,14 +156,15 @@ public class PharmacyManager {
         }
     }
 
-    // FEFO dispensing
+    
     public boolean processNextOrder() {
+        //check if queue is empty
         if (dispenseQueue.isEmpty()) {
             System.out.println("No orders to process.");
             return false;
         }
         DispenseOrder order = dispenseQueue.dequeue();
-
+        //data validation
         if (!isValidPatientID(order.getPatientID())) {
             System.out.println("Error: Patient ID not found (" + order.getPatientID() + ")");
             return false;
@@ -158,6 +178,7 @@ public class PharmacyManager {
             System.out.println("Error: Medicine ID not found (" + order.getMedID() + ")");
             return false;
         }
+        //dispensing logic 
         int quantity = order.getQuantity();
         while (quantity > 0) {
             MedicineBatch batch = med.getEarliestBatch();
@@ -174,115 +195,6 @@ public class PharmacyManager {
         removeOrderFromFile(order);
         return true;
     }
-
-    private void removeOrderFromFile(DispenseOrder processedOrder) {
-        ArrayList<DispenseOrder> orders = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader("data/dispenseorders.txt"))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] fields = line.split(",");
-                if (fields.length == 5) {
-                    DispenseOrder order = new DispenseOrder(
-                        fields[0], fields[1], fields[2], Integer.parseInt(fields[3]), fields[4]
-                    );
-                    if (!isSameOrder(order, processedOrder)) {
-                        orders.add(order);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Error reading dispenseorders.txt: " + e.getMessage());
-        }
-        try (PrintWriter pw = new PrintWriter(new FileWriter("data/dispenseorders.txt"))) {
-            for (DispenseOrder order : orders) {
-                pw.println(order.getPatientID() + "," +
-                           order.getDoctorID() + "," +
-                           order.getMedID() + "," +
-                           order.getQuantity() + "," +
-                           order.getDate());
-            }
-        } catch (IOException e) {
-            System.out.println("Error writing dispenseorders.txt: " + e.getMessage());
-        }
-    }
-
-    private boolean isSameOrder(DispenseOrder a, DispenseOrder b) {
-        return a.getPatientID().equals(b.getPatientID()) &&
-               a.getDoctorID().equals(b.getDoctorID()) &&
-               a.getMedID().equals(b.getMedID()) &&
-               a.getQuantity() == b.getQuantity() &&
-               a.getDate().equals(b.getDate());
-    }
-
-  public void generateStockReport() {
-    System.out.println("\n=== Stock Report ===");
-    System.out.printf("%-8s | %-20s | %-10s | %-10s\n", "MedID", "Name", "TotalStock", "Price (RM)");
-    System.out.println("--------------------------------------------------------------------------");
-    for (Medicine med : medicines) {
-        System.out.printf("%-8s | %-20s | %-10d | %-10.2f\n",
-            med.getMedID(), med.getName(), med.getTotalStock(), med.getPrice());
-        if (med.getBatches().isEmpty()) {
-            System.out.println("    No batches available.");
-        } else {
-            System.out.println("    ------------------------------------------------------------------");
-            System.out.printf("    %-8s | %-6s | %-12s | %-8s\n", "BatchID", "Stock", "Expiry Date", "UnitCost");
-            for (MedicineBatch batch : med.getBatches()) {
-                System.out.printf("    %-8s | %-6d | %-12s | %-8.2f\n",
-                    batch.getBatchID(), batch.getStock(), batch.getExpiryDate(), batch.getUnitCost());
-            }
-            System.out.println("    ------------------------------------------------------------------");
-        }
-        System.out.println(); // Extra line for spacing between medicines
-    }
-    System.out.println("--------------------------------------------------------------------------");
-}
-
-    public void generateQueueReport() {
-        System.out.println("=== Dispense Queue Report ===");
-        System.out.printf("%-12s | %-20s | %-10s | %-8s | %-10s | %-12s | %-20s%n",
-            "Patient ID", "Patient Name", "Doctor ID", "MedID", "Quantity", "Date", "Doctor Name");
-        System.out.println("---------------------------------------------------------------------------------------------------------------");
-
-        ArrayQueue<DispenseOrder> tempQueue = new ArrayQueue<>(dispenseQueue.size());
-        MapInterface<String, Patient> patientMap = control.PatientControl.getPatientMap();
-        MapInterface<Integer, Doctor> doctorRecords = control.DoctorManager.getDoctorRecords();
-
-        while (!dispenseQueue.isEmpty()) {
-            DispenseOrder order = dispenseQueue.dequeue();
-            String patientName = "Unknown";
-            if (patientMap != null && patientMap.contains(order.getPatientID())) {
-                Patient patient = patientMap.get(order.getPatientID());
-                patientName = patient.getName();
-            }
-            String doctorName = "Unknown";
-            try {
-                int docID = Integer.parseInt(order.getDoctorID());
-                if (doctorRecords != null && doctorRecords.get(docID) != null) {
-                    Doctor doctor = doctorRecords.get(docID);
-                    doctorName = doctor.getName();
-                }
-            } catch (NumberFormatException e) {
-                // doctorName remains "Unknown"
-            }
-            System.out.printf("%-12s | %-20s | %-10s | %-8s | %-10d | %-12s | %-20s%n",
-                order.getPatientID(), patientName, order.getDoctorID(), order.getMedID(),
-                order.getQuantity(), order.getDate(), doctorName);
-            tempQueue.enqueue(order);
-        }
-        System.out.println("---------------------------------------------------------------------------------------------------------------");
-        while (!tempQueue.isEmpty()) {
-            dispenseQueue.enqueue(tempQueue.dequeue());
-        }
-    }
-
-    public ArrayList<DispenseOrder> getAllDispenseOrders() {
-        ArrayList<DispenseOrder> list = new ArrayList<>();
-        for (int i = 0; i < dispenseQueue.size(); i++) {
-            list.add(dispenseQueue.get(i));
-        }
-        return list;
-    }
-
     public void processOrderByIndex(int index) {
         if (index < 0 || index >= dispenseQueue.size()) {
             System.out.println("Invalid order index.");
@@ -330,6 +242,107 @@ public class PharmacyManager {
         saveMedicinesToFile();
         removeOrderFromFile(order);
     }
+    //order file management
+    private void removeOrderFromFile(DispenseOrder processedOrder) {
+        ArrayList<DispenseOrder> orders = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader("data/dispenseorders.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] fields = line.split(",");
+                if (fields.length == 5) {
+                    DispenseOrder order = new DispenseOrder(
+                        fields[0], fields[1], fields[2], Integer.parseInt(fields[3]), fields[4]
+                    );
+                    if (!isSameOrder(order, processedOrder)) {
+                        orders.add(order);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Error reading dispenseorders.txt: " + e.getMessage());
+        }
+        try (PrintWriter pw = new PrintWriter(new FileWriter("data/dispenseorders.txt"))) {
+            for (DispenseOrder order : orders) {
+                pw.println(order.getPatientID() + "," +
+                           order.getDoctorID() + "," +
+                           order.getMedID() + "," +
+                           order.getQuantity() + "," +
+                           order.getDate());
+            }
+        } catch (IOException e) {
+            System.out.println("Error writing dispenseorders.txt: " + e.getMessage());
+        }
+    }
+
+    private boolean isSameOrder(DispenseOrder a, DispenseOrder b) {
+        return a.getPatientID().equals(b.getPatientID()) &&
+               a.getDoctorID().equals(b.getDoctorID()) &&
+               a.getMedID().equals(b.getMedID()) &&
+               a.getQuantity() == b.getQuantity() &&
+               a.getDate().equals(b.getDate());
+    }
+
+    //report generation
+  public void generateStockReport() {
+    System.out.println("\n=== Stock Report ===");
+    System.out.printf("%-8s | %-20s | %-10s | %-10s\n", "MedID", "Name", "TotalStock", "Price (RM)");
+    System.out.println("--------------------------------------------------------------------------");
+    for (Medicine med : medicines) {
+        System.out.printf("%-8s | %-20s | %-10d | %-10.2f\n",
+            med.getMedID(), med.getName(), med.getTotalStock(), med.getPrice());
+        if (med.getBatches().isEmpty()) {
+            System.out.println("    No batches available.");
+        } else {
+            System.out.println("    ------------------------------------------------------------------");
+            System.out.printf("    %-8s | %-6s | %-12s | %-8s\n", "BatchID", "Stock", "Expiry Date", "UnitCost");
+            for (MedicineBatch batch : med.getBatches()) {
+                System.out.printf("    %-8s | %-6d | %-12s | %-8.2f\n",
+                    batch.getBatchID(), batch.getStock(), batch.getExpiryDate(), batch.getUnitCost());
+            }
+            System.out.println("    ------------------------------------------------------------------");
+        }
+        System.out.println(); // 
+    }
+    System.out.println("--------------------------------------------------------------------------");
+}
+
+    public void generateQueueReport() {
+        System.out.println("=== Dispense Queue Report ===");
+        System.out.printf("%-12s | %-20s | %-10s | %-8s | %-10s | %-12s | %-20s%n",
+            "Patient ID", "Patient Name", "Doctor ID", "MedID", "Quantity", "Date", "Doctor Name");
+        System.out.println("---------------------------------------------------------------------------------------------------------------");
+
+        ArrayQueue<DispenseOrder> tempQueue = new ArrayQueue<>(dispenseQueue.size());
+        MapInterface<String, Patient> patientMap = control.PatientControl.getPatientMap();
+        MapInterface<Integer, Doctor> doctorRecords = control.DoctorManager.getDoctorRecords();
+
+        while (!dispenseQueue.isEmpty()) {
+            DispenseOrder order = dispenseQueue.dequeue();
+            String patientName = "Unknown";
+            if (patientMap != null && patientMap.contains(order.getPatientID())) {
+                Patient patient = patientMap.get(order.getPatientID());
+                patientName = patient.getName();
+            }
+            String doctorName = "Unknown";
+            try {
+                int docID = Integer.parseInt(order.getDoctorID());
+                if (doctorRecords != null && doctorRecords.get(docID) != null) {
+                    Doctor doctor = doctorRecords.get(docID);
+                    doctorName = doctor.getName();
+                }
+            } catch (NumberFormatException e) {
+                // doctorName remains "Unknown"
+            }
+            System.out.printf("%-12s | %-20s | %-10s | %-8s | %-10d | %-12s | %-20s%n",
+                order.getPatientID(), patientName, order.getDoctorID(), order.getMedID(),
+                order.getQuantity(), order.getDate(), doctorName);
+            tempQueue.enqueue(order);
+        }
+        System.out.println("---------------------------------------------------------------------------------------------------------------");
+        while (!tempQueue.isEmpty()) {
+            dispenseQueue.enqueue(tempQueue.dequeue());
+        }
+    }
 
     private void saveMedicinesToFile() {
         // Save medicine main info
@@ -351,7 +364,7 @@ public class PharmacyManager {
             System.out.println("Error saving medicine batches to file: " + e.getMessage());
         }
     }
-
+// medicine management
     // Add new medicine (no batches yet)
     public void addNewMedicine(Medicine med) {
         medicines.add(med);
@@ -405,7 +418,5 @@ public class PharmacyManager {
         saveMedicinesToFile();
         System.out.println("Expired batches removed.");
     }
-    public ArrayList<Medicine> getMedicines() {
-    return medicines;
-}
+
 }
